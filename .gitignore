@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+#Package
+.war
+.jar
+
+#environment variable files
+docker/.env
+.env.*
+!.env.example

@@ -8,6 +8,9 @@ public class TrayecticoServidorApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(TrayecticoServidorApplication.class, args);
+
+        System.out.println("Hola Mundo");
+
     }
 
 }
