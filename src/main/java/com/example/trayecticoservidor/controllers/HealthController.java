@@ -1,6 +1,7 @@
 package com.example.trayecticoservidor.controllers;
 
 import com.example.trayecticoservidor.service.HealthService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +21,8 @@ public class HealthController {
             return ResponseEntity.ok("OK");
         }
 
-        return ResponseEntity.internalServerError().body("Database connection failed");
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("Database connection failed");
     }
 }

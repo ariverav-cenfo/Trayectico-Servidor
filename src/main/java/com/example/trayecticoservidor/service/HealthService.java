@@ -1,6 +1,6 @@
 package com.example.trayecticoservidor.service;
 
-import com.example.trayecticoservidor.DAO.HealthDAO;
+import com.example.trayecticoservidor.dao.HealthDAO;
 import org.springframework.stereotype.Service;
 
 @Service

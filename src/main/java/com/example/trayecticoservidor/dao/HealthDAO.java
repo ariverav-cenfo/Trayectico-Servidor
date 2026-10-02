@@ -1,5 +1,6 @@
-package com.example.trayecticoservidor.DAO;
+package com.example.trayecticoservidor.dao;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -13,7 +14,11 @@ public class HealthDAO {
     }
 
     public boolean isDatabaseConnected() {
-        Integer result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
-        return result != null && result == 1;
+        try {
+            Integer result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
+            return result != null && result == 1;
+        } catch (DataAccessException e) {
+            return false;
+        }
     }
 }
