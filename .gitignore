@@ -33,10 +33,11 @@ build/
 .vscode/
 
 #Package
-.war
-.jar
+*.war
+*.jar
 
 #environment variable files
+.env
 docker/.env
 .env.*
 !.env.example
