@@ -21,3 +21,6 @@ Adicionalmente los environment variables de spring no estan configurados en un a
 4- Agregar variables, el nombre de la variable es igual que a como estan definidos en el application settings pero sin el $ 
 5- Click OK
 6- Click Apply y despues OK
+
+*****
+Para informacion base pruebas y Jacoco ver el documento en drive
