@@ -1,0 +1,84 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": "parada_consultable.fid--aabaaa5_1a0ff1058e5_11c3",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.68130305,
+     9.90732516
+    ]
+   },
+   "geometry_name": "geometria_crtm05",
+   "properties": {
+    "id": 308618,
+    "descripcion_corta": "MAXI PALÍ",
+    "descripcion": "CONTIGUO A MAXI PALÍ TURRIALBA",
+    "estado": "1",
+    "bahia": null,
+    "estacion_en_terminal": null,
+    "tipo_caseta": "2",
+    "demarcacion_horizontal": null,
+    "demarcacion_vertical": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "parada_consultable.fid--aabaaa5_1a0ff1058e5_11c4",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.98447737,
+     9.91565294
+    ]
+   },
+   "geometry_name": "geometria_crtm05",
+   "properties": {
+    "id": -5289,
+    "descripcion_corta": "300 METROS NORTE DEL MARIPOSARIO KEKOLDI",
+    "descripcion": "300 METROS NORTE DEL MARIPOSARIO KEKOLDI",
+    "estado": "1",
+    "bahia": null,
+    "estacion_en_terminal": null,
+    "tipo_caseta": "1",
+    "demarcacion_horizontal": "Borrosa",
+    "demarcacion_vertical": "Borrosa"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "parada_consultable.fid--aabaaa5_1a0ff1058e5_11c5",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -83.961819,
+     9.90712845
+    ]
+   },
+   "geometry_name": "geometria_crtm05",
+   "properties": {
+    "id": -5286,
+    "descripcion_corta": "SOBRE CALLE EL FIERRO",
+    "descripcion": "75 METROS NORTE DE DESTAQUEOS MB",
+    "estado": "1",
+    "bahia": null,
+    "estacion_en_terminal": null,
+    "tipo_caseta": "1",
+    "demarcacion_horizontal": "Borrosa",
+    "demarcacion_vertical": "Borrosa"
+   }
+  }
+ ],
+ "totalFeatures": 39163,
+ "numberMatched": 39163,
+ "numberReturned": 3,
+ "timeStamp": "2026-10-03T21:35:41.464Z",
+ "crs": {
+  "type": "name",
+  "properties": {
+   "name": "urn:ogc:def:crs:EPSG::4326"
+  }
+ }
+}
