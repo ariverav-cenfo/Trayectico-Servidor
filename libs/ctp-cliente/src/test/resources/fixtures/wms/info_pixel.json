@@ -1,0 +1,66 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": "paradas_x_desplazamiento.fid--aabaaa5_1a0ff1058e5_14b8",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.07677383,
+     9.93564813
+    ]
+   },
+   "geometry_name": "geometria_crtm05",
+   "properties": {
+    "id": 346,
+    "descripcion_corta": "TERMINAL DE ROMILIOS EN SAN JOSE",
+    "identificador_parada": "PBA-10101-008",
+    "descripcion": "TERMINAL DE BUSES DE ROMILIOS EN SAN JOSE",
+    "estado": "1",
+    "bahia": null,
+    "estacion_en_terminal": null,
+    "tipo_parada": "final",
+    "tipo_caseta": "1",
+    "demarcacion_horizontal": "Borrosa",
+    "demarcacion_vertical": null,
+    "sentido": "2-1"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "paradas_x_desplazamiento.fid--aabaaa5_1a0ff1058e5_14b9",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -84.07677383,
+     9.93564813
+    ]
+   },
+   "geometry_name": "geometria_crtm05",
+   "properties": {
+    "id": 346,
+    "descripcion_corta": "TERMINAL DE ROMILIOS EN SAN JOSE",
+    "identificador_parada": "PBA-10101-008",
+    "descripcion": "TERMINAL DE BUSES DE ROMILIOS EN SAN JOSE",
+    "estado": "1",
+    "bahia": null,
+    "estacion_en_terminal": null,
+    "tipo_parada": "inicial",
+    "tipo_caseta": "1",
+    "demarcacion_horizontal": "Borrosa",
+    "demarcacion_vertical": null,
+    "sentido": "1-2"
+   }
+  }
+ ],
+ "totalFeatures": "unknown",
+ "numberReturned": 2,
+ "timeStamp": "2026-10-03T21:35:42.243Z",
+ "crs": {
+  "type": "name",
+  "properties": {
+   "name": "urn:ogc:def:crs:EPSG::4326"
+  }
+ }
+}
