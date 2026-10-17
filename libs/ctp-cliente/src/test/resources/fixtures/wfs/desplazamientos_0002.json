@@ -1,0 +1,150 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": "desplazamientos.fid--aabaaa5_1a0ff1058e5_11c0",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -84.07613663,
+      9.93275628
+     ],
+     [
+      -84.07530086,
+      9.93264307
+     ],
+     [
+      -84.07499766,
+      9.93260283
+     ],
+     [
+      -84.07396682,
+      9.93246601
+     ],
+     [
+      -84.07395371,
+      9.9327744
+     ]
+    ]
+   },
+   "geometry_name": "geometria_crtm05",
+   "properties": {
+    "id": 539,
+    "identificador_desplazamiento": "0002-A-2",
+    "descripcion": "SAN JOSÉ - SABANA CEMENTERIO, 1-2",
+    "estado": "activo",
+    "sentido": "1-2",
+    "longitud": 6778,
+    "porcentaje_lastre": 0,
+    "porcentaje_pavimento": 100,
+    "tipo_desplazamiento": "1",
+    "pendiente_ponderada": 1,
+    "pendiente_maxima": 2,
+    "tipo_servicio": "2",
+    "radio_minimo_curvas_horizontales": 3
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "desplazamientos.fid--aabaaa5_1a0ff1058e5_11c1",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -84.07613663,
+      9.93275628
+     ],
+     [
+      -84.07530086,
+      9.93264307
+     ],
+     [
+      -84.07499766,
+      9.93260283
+     ],
+     [
+      -84.07396682,
+      9.93246601
+     ],
+     [
+      -84.07395371,
+      9.9327744
+     ]
+    ]
+   },
+   "geometry_name": "geometria_crtm05",
+   "properties": {
+    "id": 540,
+    "identificador_desplazamiento": "0002-A-1",
+    "descripcion": "SAN JOSÉ - SABANA CEMENTERIO, 2-1",
+    "estado": "activo",
+    "sentido": "1-2",
+    "longitud": 6755,
+    "porcentaje_lastre": 0,
+    "porcentaje_pavimento": 100,
+    "tipo_desplazamiento": "1",
+    "pendiente_ponderada": 1,
+    "pendiente_maxima": 2,
+    "tipo_servicio": "2",
+    "radio_minimo_curvas_horizontales": 27
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "desplazamientos.fid--aabaaa5_1a0ff1058e5_11c2",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -84.07609472,
+      9.9327506
+     ],
+     [
+      -84.07530086,
+      9.93264307
+     ],
+     [
+      -84.07499766,
+      9.93260283
+     ],
+     [
+      -84.07396682,
+      9.93246601
+     ],
+     [
+      -84.07395371,
+      9.9327744
+     ]
+    ]
+   },
+   "geometry_name": "geometria_crtm05",
+   "properties": {
+    "id": 537,
+    "identificador_desplazamiento": "0002-B-1",
+    "descripcion": "SAN JOSÉ - B° LA PITAHAYA, 1-2",
+    "estado": "activo",
+    "sentido": "1-2",
+    "longitud": 7128,
+    "porcentaje_lastre": 0,
+    "porcentaje_pavimento": 100,
+    "tipo_desplazamiento": "1",
+    "pendiente_ponderada": 2,
+    "pendiente_maxima": 2,
+    "tipo_servicio": "2",
+    "radio_minimo_curvas_horizontales": 11
+   }
+  }
+ ],
+ "totalFeatures": 3,
+ "numberMatched": 3,
+ "numberReturned": 3,
+ "timeStamp": "2026-10-03T21:35:41.432Z",
+ "crs": {
+  "type": "name",
+  "properties": {
+   "name": "urn:ogc:def:crs:EPSG::4326"
+  }
+ }
+}

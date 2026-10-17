@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<ruleset name="ctp-cliente"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>Reglas PMD del proyecto.</description>
+
+  <rule ref="category/java/bestpractices.xml">
+    <exclude name="SystemPrintln"/>
+    <exclude name="UnitTestContainsTooManyAsserts"/>
+    <exclude name="UnitTestAssertionsShouldIncludeMessage"/>
+  </rule>
+
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="AvoidLiteralsInIfCondition"/>
+    <exclude name="AvoidFieldNameMatchingMethodName"/>
+    <exclude name="ReturnEmptyCollectionRatherThanNull"/>
+  </rule>
+
+  <rule ref="category/java/multithreading.xml">
+    <exclude name="UseConcurrentHashMap"/>
+    <exclude name="DoNotUseThreads"/>
+  </rule>
+
+  <rule ref="category/java/performance.xml">
+    <exclude name="AvoidInstantiatingObjectsInLoops"/>
+  </rule>
+
+  <rule ref="category/java/security.xml"/>
+
+  <rule ref="category/java/design.xml">
+    <exclude name="LawOfDemeter"/>
+    <exclude name="AvoidThrowingRawExceptionTypes"/>
+    <exclude name="TooManyMethods"/>
+    <exclude name="LoosePackageCoupling"/>
+    <exclude name="DataClass"/>
+    <exclude name="AvoidCatchingGenericException"/>
+    <exclude name="SignatureDeclareThrowsException"/>
+    <exclude name="ExcessiveImports"/>
+    <exclude name="CouplingBetweenObjects"/>
+  </rule>
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties>
+      <property name="reportLevel" value="20"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/codestyle.xml">
+    <exclude name="AtLeastOneConstructor"/>
+    <exclude name="OnlyOneReturn"/>
+    <exclude name="ShortVariable"/>
+    <exclude name="LongVariable"/>
+    <exclude name="ShortClassName"/>
+    <exclude name="ShortMethodName"/>
+    <exclude name="MethodArgumentCouldBeFinal"/>
+    <exclude name="LocalVariableCouldBeFinal"/>
+    <exclude name="UseExplicitTypes"/>
+    <exclude name="CommentDefaultAccessModifier"/>
+    <exclude name="LinguisticNaming"/>
+    <exclude name="CallSuperInConstructor"/>
+    <exclude name="UseUnderscoresInNumericLiterals"/>
+    <exclude name="FieldNamingConventions"/>
+    <exclude name="ConfusingTernary"/>
+    <exclude name="PrematureDeclaration"/>
+  </rule>
+</ruleset>
