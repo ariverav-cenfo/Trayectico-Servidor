@@ -32,7 +32,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Instalar CTP Cliente 
-        run: -/mvnw install -DskipTests -f libs/ctp-cliente/pom.xml
+        run: ./mvnw install -DskipTests -f libs/ctp-cliente/pom.xml
 
       - name: Compilar main project
         run: ./mvnw compile
