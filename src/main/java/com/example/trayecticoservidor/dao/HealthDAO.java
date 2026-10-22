@@ -21,4 +21,13 @@ public class HealthDAO {
             return false;
         }
     }
+
+    public String getPostgisVersion(){
+        return jdbcTemplate.queryForObject("SELECT postgis_version()", String.class);
+    }
+
+    public String getPgRoutingVersion() {
+        return jdbcTemplate.queryForObject("SELECT * FROM pgr_version()", String.class);
+    }
+
 }
