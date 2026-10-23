@@ -11,15 +11,16 @@ Actualmente el compose necesita las siguientes variables para la BD
 DB_USER=USUARIOEJEMPLO
 DB_PASSWORD=PASSWORDEJEMPLO
 
-*Para la contraseña en el docker, postgre puede tener problemas interpretando valores como / $ " 
+*Para la contraseña en el docker, postgre puede tener problemas interpretando valores como / $ "
+ Se escapa con $$
 
-Adicionalmente los environment variables de spring no estan configurados en un archivo .env, estan configurados directamente en el application properties: 
-1- En intellij junto a la opcion de run seleccionar el drop down
-2- En el drop down seleccionar "Edit configurations" 
-3- En "Environment variables" seleccionar "Edit environment variables" 
-4- Agregar variables, el nombre de la variable es igual que a como estan definidos en el application settings pero sin el $ 
-5- Click OK
-6- Click Apply y despues OK
+Adicionalmente los environment variables de spring no estan configurados en un archivo .env, estan configurados directamente en el application.properties: 
+- En intellij junto a la opcion de run seleccionar el drop down
+- En el drop down seleccionar "Edit configurations" 
+- En "Environment variables" seleccionar "Edit environment variables" 
+- Agregar variables, el nombre de la variable es igual que a como estan definidos en el application.properties pero sin el $ 
+- Click OK
+- Click Apply y despues OK
 
 
 ## 1. Prerrequisitos
@@ -30,7 +31,6 @@ Instalar las siguientes herramientas antes de iniciar:
 - **Git**
 - **Docker Desktop**
 - **IntelliJ IDEA**
-- **Maven Wrapper**, incluido en el repositorio mediante `mvnw` y `mvnw.cmd`
 
 ## 2. Clonar el repositorio
 
@@ -42,56 +42,71 @@ cd Trayectico-Servidor
 
 ## 3. Configuración de variables de entorno
 
-El proyecto utiliza dos ubicaciones para variables de entorno:
+El proyecto utiliza variables de entorno para configurar la conexión a PostgreSQL.
 
-- `.env` en la raíz del proyecto.
-- `docker/.env`, utilizado para la configuración relacionada con Docker.
+- Docker utiliza el archivo `docker/.env`.
+- Spring Boot utiliza las variables configuradas en IntelliJ IDEA.
 
 ### Preparación
 
-1. Crear los archivos `.env`.
-2. Ambos .env necesitan las variables: `DB_USER=AgregarValor` y `DB_PASSWORD=AgregarValor`.
+1. Crear el archivo `docker/.env` a partir de `docker/.env.example`, si está disponible.
+2. Configurar las siguientes variables en `docker/.env`:
+
+   ```dotenv
+   DB_USER=AgregarValor
+   DB_PASSWORD=AgregarValor
+   ```
+
 3. No subir contraseñas, tokens ni credenciales reales al repositorio.
 
 ### Configuración en IntelliJ IDEA
 
 1. Abrir el proyecto `Trayectico-Servidor`.
 2. Ir a **Run → Edit Configurations**.
-3. Seleccionar la configuración de ejecución del servidor o crear una configuración de tipo Spring Boot.
-4. Configurar las variables de entorno que necesita el backend, agregando la ruta de .env en Environment variables. Usar el .env de la raíz del proyecto.
+3. Seleccionar la configuración de ejecución del servidor o crear una configuración de tipo **Spring Boot**.
+4. En **Environment variables**, agregar las variables que necesita Spring Boot, utilizando los nombres y valores correspondientes a la configuración del proyecto.
 5. Guardar los cambios.
 
-**Importante:** IntelliJ no carga automáticamente cualquier archivo `.env` por el simple hecho de existir. Se deben introducir en la configuración de ejecución.
+**Importante:** IntelliJ IDEA no carga automáticamente las variables de un archivo `.env` por el simple hecho de que exista. Las variables deben configurarse en la ejecución de Spring Boot.
 
-## 4. PostgreSQL con Docker Compose
+## 4. Iniciar y administrar PostgreSQL con Docker
 
-Docker Compose se utiliza para levantar la base de datos PostgreSQL. El servidor se ejecuta por separado.
+Desde la raíz del proyecto, ejecuta los siguientes comandos.
 
-Abrir Docker Desktop, luego, desde la raíz del proyecto:
+### Iniciar los contenedores
 
-```bash
-docker compose up -d
+```powershell
+docker compose --env-file docker/.env -f docker/docker-compose.yml up -d
 ```
 
-Para revisar los servicios:
+### Verificar el estado de los contenedores
 
-```bash
-docker compose ps
+```powershell
+docker compose -f docker/docker-compose.yml ps
 ```
 
-Para consultar los registros:
+### Consultar los logs
 
-```bash
-docker compose logs
+```powershell
+docker compose -f docker/docker-compose.yml logs -f
 ```
 
-Para detener los servicios:
+### Detener los contenedores
 
-```bash
-docker compose down
+```powershell
+docker compose -f docker/docker-compose.yml down
 ```
 
-Antes de iniciar el backend, verificar que PostgreSQL esté ejecutándose y que las credenciales, el puerto y el nombre de la base de datos coincidan con la configuración del servidor.
+**Importante:** Las variables `POSTGRES_USER` y `POSTGRES_PASSWORD` se utilizan para inicializar PostgreSQL cuando se crea el volumen por primera vez. Si cambias las credenciales después, el cambio no se aplica automáticamente a una base de datos existente.
+
+Para reiniciar la base de datos local con las nuevas credenciales, ejecuta:
+
+```powershell
+docker compose -f docker/docker-compose.yml down -v
+docker compose --env-file docker/.env -f docker/docker-compose.yml up -d
+```
+
+**Advertencia:** `down -v` elimina los volúmenes asociados al proyecto y, por tanto, los datos locales de PostgreSQL. Úsalo únicamente si puedes perder esos datos.
 
 ## 5. Instalar la librería CTP
 
@@ -127,11 +142,7 @@ Desde la raíz de `Trayectico-Servidor`, compilar el proyecto:
 
 ### Iniciar Spring Boot
 
-```powershell
-.\mvnw.cmd spring-boot:run
-```
-
-Antes de utilizarlo, confirmar que el plugin está configurado y que las variables de entorno necesarias están disponibles, si se siguieron los pasos anteriores, esto debería estar cubierto.
+Desde IntelliJ IDEA, abre la configuración de ejecución de Spring Boot, verifica que estén configuradas las variables de entorno indicadas en la sección 3 y haz clic en **Run** para iniciar la aplicación.
 
 El servidor debe conectarse a PostgreSQL y completar la inicialización de la aplicación sin errores.
 
@@ -147,7 +158,7 @@ Ejecutar las pruebas automatizadas:
 
 Las migraciones se encuentran en:
 
-`db/migrations/`
+`src/main/wresources/db/migration`
 
 Las migraciones deben seguir la convención de nombres de Flyway, por ejemplo:
 
@@ -189,21 +200,15 @@ Ejemplo de formato:
 
 ```dotenv
 DB_HOST=localhost
-
-DB_PORT=5432
-
-DB_NAME=example_db
-
-DB_USERNAME=example_user
-
-DB_PASSWORD=replace_me
+DB_PORT=5433
+DB_NAME=DBDEEJEMPLO
+DB_USER=USUARIOEJEMPLO
+DB_PASSWORD=PASSWORDEJEMPLO
 ```
 
 Este bloque es únicamente ilustrativo. Los nombres reales deben coincidir con las variables que consume la aplicación y la configuración de Docker.
 
 ## 10. Responsables por bloque
-
-Los responsables todavía no están definidos o no han sido identificados.
 
 | **Bloque** | **Responsable** |
 |---|---|
