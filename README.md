@@ -1,28 +1,4 @@
 # Trayectico-Servidor
-
-Variables .env
-
-El docker compose necesita un archivo .env con las variables que pueda ocupar el compose en el mismo folder:
-Docker 
-  --->docker-compose.yml
-  --->.env
-
-Actualmente el compose necesita las siguientes variables para la BD
-DB_USER=USUARIOEJEMPLO
-DB_PASSWORD=PASSWORDEJEMPLO
-
-*Para la contraseña en el docker, postgre puede tener problemas interpretando valores como / $ "
- Se escapa con $$
-
-Adicionalmente los environment variables de spring no estan configurados en un archivo .env, estan configurados directamente en el application.properties: 
-- En intellij junto a la opcion de run seleccionar el drop down
-- En el drop down seleccionar "Edit configurations" 
-- En "Environment variables" seleccionar "Edit environment variables" 
-- Agregar variables, el nombre de la variable es igual que a como estan definidos en el application.properties pero sin el $ 
-- Click OK
-- Click Apply y despues OK
-
-
 ## 1. Prerrequisitos
 
 Instalar las siguientes herramientas antes de iniciar:
