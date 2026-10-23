@@ -134,7 +134,7 @@ Ejecutar las pruebas automatizadas:
 
 Las migraciones se encuentran en:
 
-`src/main/wresources/db/migration`
+`src/main/resources/db/migration`
 
 Las migraciones deben seguir la convención de nombres de Flyway, por ejemplo:
 
