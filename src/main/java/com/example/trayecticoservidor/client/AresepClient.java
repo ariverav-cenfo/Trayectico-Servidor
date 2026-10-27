@@ -58,18 +58,24 @@ public class AresepClient {
             List<AresepFare> fares = new ArrayList<>();
             HashSet<String> codes = new HashSet<>();
             for (JsonNode row : root.path("value")) {
-                String code = required(row, "codigoFraccionamiento");
-                if (!codes.add(code)) {
-                    throw new IllegalArgumentException("Fraccionamiento ARESEP duplicado: " + code);
+                String code = null;
+                try {
+                    code = required(row, "codigoFraccionamiento");
+                    if (!codes.add(code)) {
+                        throw new IllegalArgumentException("Fraccionamiento ARESEP duplicado: " + code);
+                    }
+                    fares.add(new AresepFare(required(row, "codigoRuta"), required(row, "nombreRuta"),
+                            required(row, "codigoRamal"), required(row, "nombreRamal"), code,
+                            required(row, "nombreFraccionamiento"), decimal(row, "promedioKmViaje", false),
+                            decimal(row, "tarifaRegular", true), decimal(row, "tarifaAdultoMayor", true),
+                            text(row, "resolucion"), date(row, "fechaResolucion", false),
+                            text(row, "gaceta"), text(row, "alcance"), date(row, "fechaGaceta", false),
+                            date(row, "fechaVigencia", true), text(row, "expediente"), text(row, "operadores"),
+                            text(row, "tipoServicio"), text(row, "provincia")));
+                } catch (IllegalArgumentException | ArithmeticException | java.time.DateTimeException e) {
+                    throw new IllegalArgumentException("Fila ARESEP con codigoFraccionamiento="
+                            + (code == null ? "desconocido" : code) + ": " + e.getMessage(), e);
                 }
-                fares.add(new AresepFare(required(row, "codigoRuta"), required(row, "nombreRuta"),
-                        required(row, "codigoRamal"), required(row, "nombreRamal"), code,
-                        required(row, "nombreFraccionamiento"), decimal(row, "promedioKmViaje", false),
-                        decimal(row, "tarifaRegular", true), decimal(row, "tarifaAdultoMayor", true),
-                        text(row, "resolucion"), date(row, "fechaResolucion", false),
-                        text(row, "gaceta"), text(row, "alcance"), date(row, "fechaGaceta", false),
-                        date(row, "fechaVigencia", true), text(row, "expediente"), text(row, "operadores"),
-                        text(row, "tipoServicio"), text(row, "provincia")));
             }
             return List.copyOf(fares);
         } catch (IOException e) {

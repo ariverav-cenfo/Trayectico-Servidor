@@ -49,5 +49,32 @@ class AresepClientTest {
                     () -> client.parseFares(response(ROW.replace("350.00", value))));
         }
     }
+
+    @Test
+    void rowErrorsIncludeFailingFractionCodeAndOriginalCause() {
+        for (String invalidRow : new String[]{
+                ROW.replace("T0001", "T0002").replace("350.00", "-1.00"),
+                ROW.replace("T0001", "T0002").replace("350.00", "350.001"),
+                ROW.replace("T0001", "T0002").replace("350.00", "invalid"),
+                ROW.replace("T0001", "T0002").replace("350.00", ""),
+                ROW.replace("T0001", "T0002").replace("2026-09-04T00:00:00.000", "invalid"),
+                ROW.replace("T0001", "T0002").replace("\"provincia\":null", "\"provincia\":{}")}) {
+            var error = assertThrows(IllegalArgumentException.class,
+                    () -> client.parseFares(response(ROW + "," + invalidRow)));
+
+            assertTrue(error.getMessage().contains("codigoFraccionamiento=T0002"));
+            assertNotNull(error.getCause());
+            assertTrue(error.getMessage().contains(error.getCause().getMessage()));
+        }
+    }
+
+    @Test
+    void missingFractionCodeIsReportedAsUnknown() {
+        var error = assertThrows(IllegalArgumentException.class,
+                () -> client.parseFares(response(ROW.replace("T0001", ""))));
+
+        assertTrue(error.getMessage().contains("codigoFraccionamiento=desconocido"));
+        assertTrue(error.getMessage().contains("Falta campo ARESEP: codigoFraccionamiento"));
+    }
 }
 
