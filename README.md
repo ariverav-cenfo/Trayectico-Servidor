@@ -184,7 +184,110 @@ DB_PASSWORD=PASSWORDEJEMPLO
 
 Este bloque es únicamente ilustrativo. Los nombres reales deben coincidir con las variables que consume la aplicación y la configuración de Docker.
 
-## 10. Responsables por bloque
+## 10. Importar tarifas de ARESEP
+
+Cada integrante debe ejecutar la importación en su base local. Los datos cargados
+no se comparten mediante Git; se comparten el código y las migraciones.
+
+Primero iniciar PostgreSQL con Docker (sección 4) e instalar la biblioteca CTP
+(sección 5). La conexión actual del servidor es `localhost:5433/TrayecticoDB`.
+No es necesario instalar PostgreSQL Server ni pgAdmin en Windows.
+
+### Credenciales en PowerShell
+
+Las variables configuradas en IntelliJ o en `docker/.env` no se transfieren
+automáticamente a PowerShell. En la misma terminal donde se ejecutará Maven:
+
+```powershell
+$env:DB_USER = Read-Host "Usuario de PostgreSQL"
+$credencial = Get-Credential -UserName $env:DB_USER -Message "Contraseña de PostgreSQL"
+$env:DB_PASSWORD = $credencial.GetNetworkCredential().Password
+Remove-Variable credencial
+```
+
+Usar las credenciales con las que se inicializó el contenedor. Estas variables
+permanecen disponibles durante la sesión de esa terminal; no se guardan en Git.
+
+### Ejecutar la importación
+
+Desde la raíz del proyecto:
+
+```powershell
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--aresep.import-on-startup=true --spring.main.web-application-type=none"
+```
+
+Flyway aplica `V5__aresep_fares.sql`. Despues se consulta el servicio publico de
+ARESEP y se importan las tarifas. La opcion esta desactivada por defecto;
+el arranque normal no descarga datos. Esta ejecucion manual no programa actualizaciones diarias.
+
+El proceso valida la respuesta completa antes de escribir y guarda todos los lotes
+en una transaccion. Un error conserva la carga anterior y se registra en la salida.
+Repetirlo actualiza por `fraction_code` sin duplicar filas; una vigencia anterior
+no reemplaza una mas reciente. No se eliminan tarifas ausentes de una descarga:
+todavia debe verificarse el alcance del servicio y su tratamiento de bajas.
+Los codigos ARESEP se conservan sin asumir equivalencias con CTP.
+
+La URL puede configurarse con `ARESEP_URL`; el tiempo limite de respuesta se
+configura con `aresep.timeout-seconds` (120 segundos por defecto).
+`imported_at` indica la ultima importacion de cada tarifa, no su fecha de vigencia.
+
+La migración `V5__aresep_fares.sql` incluye `payment_method`, un campo de
+texto opcional para registrar manualmente los métodos de pago verificados.
+`NULL` significa que no se conoce el dato. Se pueden anotar varios métodos, por
+ejemplo `Efectivo, Tarjeta`, únicamente cuando estén confirmados. La importación
+de ARESEP no modifica este campo. Flyway aplica la migración al iniciar el servidor
+contra una base nueva. Crear o iniciar el contenedor por sí solo no ejecuta Flyway.
+Si esta migración ya se aplicó antes de agregar la columna, editar el archivo no actualiza esa
+base y puede provocar un error de checksum. Esa base necesita una actualización
+coordinada de su esquema e historial de migraciones antes del siguiente arranque.
+
+La confirmación de éxito es el mensaje `Importacion ARESEP completada`.
+`BUILD SUCCESS` por sí solo no confirma la carga: revisar también los errores
+de arranque de Spring Boot y Flyway.
+
+### Comprobar los datos sin pgAdmin
+
+Entrar a PostgreSQL desde PowerShell, con `DB_USER` configurada:
+
+```powershell
+docker exec -it postgres_db psql -U $env:DB_USER -d TrayecticoDB
+```
+
+Dentro de `psql`, listar las tablas con `\dt` y consultar:
+
+```sql
+SELECT count(*) AS tarifas, max(imported_at) AS ultima_importacion
+FROM aresep_fare;
+
+SELECT route_code, fraction_code, fraction_name, regular_fare, effective_date
+FROM aresep_fare
+ORDER BY fraction_code
+LIMIT 20;
+```
+
+Repetir la importación y consultar de nuevo. Si ARESEP devuelve los mismos
+registros, la cantidad se mantiene y `imported_at` se actualiza para las tarifas
+aceptadas. Si publica fraccionamientos nuevos, la cantidad puede aumentar.
+Salir de `psql` con `\q` antes de ejecutar comandos de PowerShell.
+
+### Problemas frecuentes
+
+- `password authentication failed for user "${DB_USER}"`: falta configurar
+  `DB_USER` en la terminal que ejecuta Maven. Configurar también `DB_PASSWORD`.
+- Error de contraseña con un usuario real: comprobar las credenciales originales
+  del contenedor; cambiar `docker/.env` no cambia la contraseña de un volumen existente.
+- `relation "aresep_fare" does not exist`: comprobar que el servidor se conectó
+  a esta misma base y que Flyway aplicó `V5__aresep_fares.sql` sin errores.
+- Indicador `TrayecticoDB-#`: hay una sentencia pendiente. Cancelarla con Ctrl+C
+  y volver a escribir la consulta SQL terminada en punto y coma.
+
+Pruebas unitarias del importador, sin consultar ARESEP ni usar PostgreSQL:
+
+```powershell
+.\mvnw.cmd "-Dtest=AresepClientTest,AresepImportServiceTest" test
+```
+
+## 11. Responsables por bloque
 
 | **Bloque** | **Responsable** |
 |---|---|
