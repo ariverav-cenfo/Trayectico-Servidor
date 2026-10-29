@@ -287,7 +287,136 @@ Pruebas unitarias del importador, sin consultar ARESEP ni usar PostgreSQL:
 .\mvnw.cmd "-Dtest=AresepClientTest,AresepImportServiceTest" test
 ```
 
-## 11. Responsables por bloque
+## 11. Importar rutas del CTP
+
+Igual que con ARESEP, cada integrante corre la importación en su base local. Antes hay que
+levantar PostgreSQL (sección 4), instalar la biblioteca CTP (sección 5) y configurar las
+credenciales en la terminal (sección 10, "Credenciales en PowerShell").
+
+### Ejecutar la importación
+
+Desde la raíz del proyecto, con el grupo de rutas de SCRUM-87:
+
+```powershell
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--trayectico.importar-ruta=0002,0090,0403,0007,0008,0009,0010,0016 --spring.main.web-application-type=none"
+```
+
+Para una sola ruta, `--trayectico.importar-ruta=0002`. Las comillas son necesarias:
+sin ellas, PowerShell puede partir el argumento por las comas y por el `-D`.
+
+- Cada ruta se lee del CTP y se guarda en su propia transacción. Solo se importan los
+  recorridos que el CTP marca como activos.
+- Si una ruta falla (el CTP no responde, el código no existe o una parada viene sin
+  ubicación), se registra con `ERROR` y se sigue con las demás. Al final, si alguna
+  falló, el arranque termina con error y el mensaje dice cuáles y por qué.
+- Reimportar no duplica: actualiza por `ctp_code`. Para reintentar basta con correr
+  solo las rutas que fallaron, por ejemplo `--trayectico.importar-ruta=0403`.
+- Se ignoran los espacios y los códigos repetidos. Una lista sin códigos da error
+  antes de consultar al CTP.
+
+La confirmación de éxito es `Importacion terminada: 8 de 8 rutas importadas`, y antes,
+una línea `Ruta ... importada` por cada ruta. Igual que con ARESEP, `BUILD SUCCESS`
+por sí solo no confirma la carga.
+
+### Grupo de rutas de SCRUM-87
+
+Con solo la 0002 no hay transbordos que calcular. El grupo son las rutas que comparten
+paradas con la 0002, elegidas con `RutasConectadas`
+(`libs/ctp-cliente/src/test/java/ctpcliente/ejemplos/`). El 28 de octubre de 2026 la
+0002 tenía 38 paradas distintas y 23 rutas compartían al menos una con ella. Se tomaron
+las que comparten 4 o más, que eran 8, y se excluyó la 0300 (ver abajo). Quedan 7, dentro
+del rango de 5 a 10 del ticket. Con un corte en 3 habrían sido 11.
+
+| Ruta | Paradas compartidas con la 0002 | Ejemplo de parada compartida |
+|---|---|---|
+| 0002 | Ruta base del grupo | |
+| 0090 | 7 | PBA-10103-002 (contiguo a Terminal Puntarenas) |
+| 0403 | 6 | PBA-10102-049 (en frente al Más por Menos) |
+| 0007 | 5 | PBA-10103-007 (en el Parque Beneméritos) |
+| 0008 | 5 | PBA-10102-100 (Katana) |
+| 0009 | 4 | PBA-10102-020 (casi en frente del Palí) |
+| 0010 | 4 | PBA-10102-037 (detrás de la Toyota) |
+| 0016 | 4 | PBA-10101-021 (antigua Litografía Casa Gráfica) |
+
+**Ruta excluida: 0300.** También comparte 4 paradas con la 0002, pero su recorrido
+`0300-M-1` trae dos paradas distintas con el mismo orden (24): PBA-30304-075 (El Cierre)
+y PBA-30303-018 (sobre calle vieja a Cartago). La restricción `uq_stop_displacement_order`
+de la V2 no permite dos paradas en la misma posición de un recorrido, así que la
+importación de la 0300 falla y se revierte completa. Falta decidir qué hacer con ese
+dato del CTP (por ejemplo, saltarse el recorrido o quedarse con una de las dos paradas);
+mientras tanto, la 0300 queda fuera del grupo.
+
+`RutasConectadas` cuenta las paradas de todos los recorridos de la 0002, y el importador
+solo guarda los activos. Por eso, en la base pueden quedar menos paradas compartidas que
+las de la tabla. La consulta de la siguiente sección muestra las que quedaron: el 28 de
+octubre de 2026, con estas 8 rutas, devolvió 58 paradas compartidas por al menos dos
+rutas, y la que más comparte es PBA-10103-007 (Parque Beneméritos), con 5.
+
+Para repetir la elección, desde `libs/ctp-cliente`:
+
+```powershell
+.\mvnw.cmd -q test-compile dependency:build-classpath "-Dmdep.outputFile=target/cp.txt"
+java '-Djava.util.logging.SimpleFormatter.format=%4$s %5$s%6$s%n' -cp "target/classes;target/test-classes;$(Get-Content target/cp.txt)" ctpcliente.ejemplos.RutasConectadas 0002
+```
+
+### Comprobar los datos
+
+Entrar a `psql` como en la sección 10:
+
+```powershell
+docker exec -it postgres_db psql -U $env:DB_USER -d TrayecticoDB
+```
+
+Rutas importadas, con sus ramales y recorridos:
+
+```sql
+SELECT r.ctp_code AS ruta,
+       count(DISTINCT b.id) AS ramales,
+       count(DISTINCT d.id) AS recorridos
+FROM route r
+LEFT JOIN branch b ON b.route_id = r.id
+LEFT JOIN displacement d ON d.branch_id = b.id
+GROUP BY r.ctp_code
+ORDER BY r.ctp_code;
+```
+
+Paradas compartidas por al menos dos rutas. Si devuelve filas, hay transbordos posibles:
+
+```sql
+SELECT s.ctp_code AS parada,
+       s.description AS descripcion,
+       string_agg(DISTINCT r.ctp_code, ', ' ORDER BY r.ctp_code) AS rutas,
+       count(DISTINCT r.id) AS cantidad_rutas
+FROM stop s
+JOIN stop_displacement sd ON sd.stop_id = s.id
+JOIN displacement d ON d.id = sd.displacement_id
+JOIN branch b ON b.id = d.branch_id
+JOIN route r ON r.id = b.route_id
+GROUP BY s.id, s.ctp_code, s.description
+HAVING count(DISTINCT r.id) >= 2
+ORDER BY cantidad_rutas DESC, s.ctp_code;
+```
+
+Para comprobar que reimportar no duplica, correr este conteo, repetir la importación y
+correrlo de nuevo. Si el CTP no cambió nada entre las dos corridas, los números son iguales:
+
+```sql
+SELECT (SELECT count(*) FROM route)             AS rutas,
+       (SELECT count(*) FROM branch)            AS ramales,
+       (SELECT count(*) FROM displacement)      AS recorridos,
+       (SELECT count(*) FROM stop)              AS paradas,
+       (SELECT count(*) FROM stop_displacement) AS paradas_en_recorridos;
+```
+
+Pruebas del importador, sin consultar al CTP:
+
+```powershell
+.\mvnw.cmd "-Dtest=ImportadorRutaTest,RutaDAOTest" test
+```
+
+`RutaDAOTest` usa Testcontainers, así que Docker Desktop tiene que estar abierto.
+
+## 12. Responsables por bloque
 
 | **Bloque** | **Responsable** |
 |---|---|
