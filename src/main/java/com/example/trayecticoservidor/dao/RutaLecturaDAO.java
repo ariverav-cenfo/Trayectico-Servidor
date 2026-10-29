@@ -12,20 +12,20 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-/*
- DAO encargado exclusivamente de la lectura del catálogo de rutas.
- Utiliza JdbcTemplate para ejecutar consultas SQL nativas sobre las tablas
- del esquema V2 (route, branch, displacement).
+/**
+ *DAO encargado exclusivamente de la lectura del catálogo de rutas.
+ *Utiliza JdbcTemplate para ejecutar consultas SQL nativas sobre las tablas
+ *del esquema V2 (route, branch, displacement).
  */
 @Repository
 public class RutaLecturaDAO {
     private final JdbcTemplate jdbc;
 
-    /*
-     Obtiene una lista resumida de todas las rutas disponibles en el sistema.
-     Propósito: Alimentar la vista principal de Angular con el código y nombre
-     de las rutas de manera rápida y ligera, sin cargar ramales ni desplazamientos.
-     @return Lista de RutaResumenDTO ordenada alfabéticamente por el código del CTP.
+    /**
+     *Obtiene una lista resumida de todas las rutas disponibles en el sistema.
+     *Propósito: Alimentar la vista principal de Angular con el código y nombre
+     *de las rutas de manera rápida y ligera, sin cargar ramales ni desplazamientos.
+     *@return Lista de RutaResumenDTO ordenada alfabéticamente por el código del CTP.
      */
     public RutaLecturaDAO(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
@@ -52,13 +52,13 @@ public class RutaLecturaDAO {
         );
     }
 
-    /*
-     Obtiene el detalle completo de una ruta específica, incluyendo sus ramales
-     y los desplazamientos (recorridos) asociados a cada ramal.
-     Propósito: Resolver el endpoint GET /rutas/{codigo} con una única ida a la base
-     de datos, optimizando el rendimiento.
-     @param codigo El código CTP de la ruta (ej. "0002").
-     @return RutaDetalleDTO con la jerarquía completa, o null si la ruta no existe.
+    /**
+     *Obtiene el detalle completo de una ruta específica, incluyendo sus ramales
+     *y los desplazamientos (recorridos) asociados a cada ramal.
+     *Propósito: Resolver el endpoint GET /rutas/{codigo} con una única ida a la base
+     *de datos, optimizando el rendimiento.
+     *@param codigo El código CTP de la ruta (ej. "0002").
+     *@return RutaDetalleDTO con la jerarquía completa, o null si la ruta no existe.
      */
     public RutaDetalleDTO obtenerRutaDetalle(String codigo) {
 
@@ -120,11 +120,11 @@ public class RutaLecturaDAO {
         }, codigo);
     }
 
-    /*
-     Clase auxiliar interna de alcance privado.
-     Propósito: Actuar como un acumulador mutable temporal para los datos del ramal
-     mientras se procesan las filas del ResultSet. Al finalizar, se convierte
-     en el RamalResumenDTO que es inmutable.
+    /**
+     *Clase auxiliar interna de alcance privado.
+     *Propósito: Actuar como un acumulador mutable temporal para los datos del ramal
+     *mientras se procesan las filas del ResultSet. Al finalizar, se convierte
+     *en el RamalResumenDTO que es inmutable.
      */
     private static class RamalBuilder{
         String codigo;
