@@ -156,8 +156,8 @@
                     </includes>
                     <excludes>
                         <exclude>**/TrayecticoServidoApplication.java</exclude>
-                        <excludedGroups>red-externa</excludedGroups>
                     </excludes>
+                    <excludedGroups>red-externa</excludedGroups>
                     <trimStackTrace>false</trimStackTrace>
                 </configuration>
                 <executions>
