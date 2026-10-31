@@ -155,14 +155,14 @@
                 <version>3.6.0</version>
                 <configuration>
                     <includes>
-                        <include>**/integration/**</include>
                         <include>**/*IT.java</include>
                         <include>**/*ITCase.java</include>
                     </includes>
                     <excludes>
+                        <exclude>**/LectorRutaCtpIT.java</exclude>
                         <exclude>**/TrayecticoServidorApplication.java</exclude>
                     </excludes>
-                    <excludedGroups>red-externa</excludedGroups>
+                    <excludedGroups>redexterna</excludedGroups>
                     <trimStackTrace>false</trimStackTrace>
                 </configuration>
                 <executions>
@@ -220,7 +220,7 @@
                         <exclude>**/*dto/**</exclude>
                         <exclude>**/*config/**</exclude>
                         <exclude>**/LectorRutaCtpIT.class</exclude>
-                        <exclude>.class:**/TrayecticoServidoApplication.class</exclude>
+                        <exclude>**/TrayecticoServidorApplication.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>

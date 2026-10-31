@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-@Tag("red-externa")
+@Tag("redexterna")
 // Llama al CTP real: necesita internet, pero no la base de datos
 // Se corre a mano desde IntelliJ. Como termina en IT, el CI no la ejecuta
 class LectorRutaCtpIT {
