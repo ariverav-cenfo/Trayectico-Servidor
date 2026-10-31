@@ -156,7 +156,7 @@
                     </includes>
                     <excludes>
                         <exclude>**/TrayecticoServidoApplication.java</exclude>
-                        <exclude>red-externa</exclude>
+                        <excludedGroups>red-externa</excludedGroups>
                     </excludes>
                     <trimStackTrace>false</trimStackTrace>
                 </configuration>
@@ -214,7 +214,7 @@
                         <exclude>**/*model/**</exclude>
                         <exclude>**/*dto/**</exclude>
                         <exclude>**/*config/**</exclude>
-                        <exclude>red-externa</exclude>
+                        <exclude>**/LectorRutaCtpIT.class</exclude>
                         <exclude>.class:**/TrayecticoServidoApplication.class</exclude>
                     </excludes>
                 </configuration>
