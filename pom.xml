@@ -148,7 +148,6 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.6.0</version>
                 <configuration>
-
                     <includes>
                         <include>**/integration/**</include>
                         <include>**/*IT.java</include>
