@@ -1,5 +1,6 @@
 package com.example.trayecticoservidor.dao;
 
+import com.example.trayecticoservidor.AbstractIntegrationTest;
 import com.example.trayecticoservidor.dto.DesplazamientoImportado;
 import com.example.trayecticoservidor.dto.ParadaImportada;
 import com.example.trayecticoservidor.dto.RamalImportado;
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 // Se corre a mano. Usa códigos que empiezan con T- para no chocar con datos reales, y @Transactional revierte al terminar
 @SpringBootTest
 @Transactional
-class RutaDAOIT {
+class RutaDAOIT extends AbstractIntegrationTest {
 
     @Autowired RutaDAO rutaDAO;
     @Autowired JdbcTemplate jdbc;
