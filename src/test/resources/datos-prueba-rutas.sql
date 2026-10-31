@@ -5,16 +5,23 @@ DELETE FROM branch;
 DELETE FROM route;
 
 -- Insertar ruta principal
+-- (Se cambia el nombre a NULL para validar que la ruta herede el nombre del primer ramal)
 INSERT INTO route (id, ctp_code, name)
-VALUES (1, '0002', 'San José - Sabana - Estadio');
+VALUES (1, '0002', NULL);
 
--- Insertar ramal asociado a la ruta
+-- Insertar ramales asociados a la ruta (Nombres reales indicados en el JSON)
 INSERT INTO branch (id, route_id, ctp_code, description)
-VALUES (1, 1, '0002-A', 'Por Sabana Sur');
+VALUES (1, 1, '0002-A', 'SAN JOSÉ - SABANA CEMENTERIO');
 
--- Insertar desplazamientos (Ida y Vuelta) para el ramal
+INSERT INTO branch (id, route_id, ctp_code, description)
+VALUES (2, 1, '0002-B', 'SAN JOSÉ - B LA PITAHAYA');
+
+-- Insertar desplazamientos con el formato real (direction '1-2', códigos tipo '0002-A-1')
 INSERT INTO displacement (id, branch_id, ctp_code, direction, active)
-VALUES (1, 1, 'DESP-001', 'Ida', true);
+VALUES (1, 1, '0002-A-1', '1-2', true);
 
 INSERT INTO displacement (id, branch_id, ctp_code, direction, active)
-VALUES (2, 1, 'DESP-002', 'Vuelta', true);
+VALUES (2, 1, '0002-A-2', '1-2', true);
+
+INSERT INTO displacement (id, branch_id, ctp_code, direction, active)
+VALUES (3, 2, '0002-B-1', '1-2', true);
