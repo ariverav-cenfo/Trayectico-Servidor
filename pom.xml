@@ -154,7 +154,7 @@
                         <include>**/*ITCase.java</include>
                     </includes>
                     <excludes>
-                        <exclude>**/TrayecticoServidoApplication.java</exclude>
+                        <exclude>**/TrayecticoServidorApplication.java</exclude>
                     </excludes>
                     <excludedGroups>red-externa</excludedGroups>
                     <trimStackTrace>false</trimStackTrace>
