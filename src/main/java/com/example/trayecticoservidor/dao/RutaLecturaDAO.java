@@ -1,9 +1,8 @@
 package com.example.trayecticoservidor.dao;
-import com.example.trayecticoservidor.dto.DesplazamientoResumenDTO;
+import com.example.trayecticoservidor.dto.RecorridoResumenDTO;
 import com.example.trayecticoservidor.dto.RamalResumenDTO;
 import com.example.trayecticoservidor.dto.RutaDetalleDTO;
 import com.example.trayecticoservidor.dto.RutaResumenDTO;
-import ctpcliente.model.Ramal;
 import org.springframework.stereotype.Repository;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -103,7 +102,7 @@ public class RutaLecturaDAO {
 
                     // Si el ramal tiene desplazamientos, los añadimos a la lista de ese ramal específico
                     if (despCode != null) {
-                        ramalesMap.get(branchCode).desplazamientos.add(new DesplazamientoResumenDTO(
+                        ramalesMap.get(branchCode).desplazamientos.add(new RecorridoResumenDTO(
                                 despCode, rs.getString("desp_direction"), rs.getBoolean("desp_active")
                         ));
                     }
@@ -129,7 +128,7 @@ public class RutaLecturaDAO {
     private static class RamalBuilder{
         String codigo;
         String nombre;
-        List<DesplazamientoResumenDTO> desplazamientos = new ArrayList<>();
+        List<RecorridoResumenDTO> desplazamientos = new ArrayList<>();
 
         RamalBuilder(String codigo, String nombre) {
             this.codigo = codigo;

@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -37,7 +36,7 @@ public class RutaController {
                     log.debug("Ruta {} encontrada y devuelta exitosamente", codigo);
                     return ResponseEntity.ok().body(ruta);
                 }).orElseGet(() ->{
-                    log.warn("La ruta con el código {} no existe. Retornando 404 Not Found", codigo);
+                    log.debug("La ruta con el código {} no existe. Retornando 404 Not Found", codigo);
                     return ResponseEntity.notFound().build();
         });
     }

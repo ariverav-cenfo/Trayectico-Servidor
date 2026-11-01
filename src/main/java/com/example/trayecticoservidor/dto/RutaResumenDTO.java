@@ -8,9 +8,9 @@ package com.example.trayecticoservidor.dto;
  *desplazamientos cuando el cliente (Angular) solo necesita pintar un menú o listado principal.
  *Al definirlo como un 'record', Java maneja de forma automática la inmutabilidad,
  *la creación de getters y la serialización directa a JSON.
- *@param codigo El identificador único de la ruta (ej. "0002").
- *@param nombre El nombre descriptivo de la ruta (ej. "San José - Sabana - Estadio").
+ *@param codigo_ruta El identificador único de la ruta.
+ *@param nombre_ruta El nombre descriptivo de la ruta.
  */
-public record RutaResumenDTO(String codigo, String nombre){
+public record RutaResumenDTO(String codigo_ruta, String nombre_ruta){
 
 }

@@ -6,13 +6,13 @@ package com.example.trayecticoservidor.dto;
  *Le indica al frontend si el recorrido está habilitado (activo) y hacia dónde se dirige (sentido).
  *Deliberadamente omite las paradas y el trazado geográfico (geometría) por ahora,
  *garantizando que la carga inicial de los detalles de la ruta sea rápida.
- *@param codigo El identificador del recorrido (ej. "DESP-001").
- *@param sentido La dirección del trayecto, típicamente "Ida" o "Vuelta".
- *@param activo Bandera booleana que indica si el desplazamiento está operativo.
+ *@param codigo_recorrido El identificador del recorrido.
+ *@param sentido_recorrido La dirección del trayecto.
+ *@param activo Bandera booleana que indica si el recorrido está operativo.
  */
-public record DesplazamientoResumenDTO (
-        String codigo,
-        String sentido,
+public record RecorridoResumenDTO(
+        String codigo_recorrido,
+        String sentido_recorrido,
         boolean activo
 ){
 }
