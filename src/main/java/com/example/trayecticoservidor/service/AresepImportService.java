@@ -1,7 +1,7 @@
 package com.example.trayecticoservidor.service;
 
 import com.example.trayecticoservidor.client.AresepClient;
-import com.example.trayecticoservidor.dao.AresepFareDAO;
+import com.example.trayecticoservidor.dao.TarifaAresepDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -9,25 +9,24 @@ import org.springframework.stereotype.Service;
 @Service
 public class AresepImportService {
     private static final Logger LOG = LoggerFactory.getLogger(AresepImportService.class);
-    private final AresepClient client;
-    private final AresepFareDAO dao;
+    private final AresepClient cliente;
+    private final TarifaAresepDAO dao;
 
-    public AresepImportService(AresepClient client, AresepFareDAO dao) {
-        this.client = client;
+    public AresepImportService(AresepClient cliente, TarifaAresepDAO dao) {
+        this.cliente = cliente;
         this.dao = dao;
     }
 
-    public int importFares() {
+    public int importarTarifas() {
         LOG.info("Iniciando importacion de tarifas ARESEP");
         try {
-            var fares = client.fetchFares();
-            dao.upsertAll(fares);
-            LOG.info("Importacion ARESEP completada: {} registros procesados", fares.size());
-            return fares.size();
+            var tarifas = cliente.obtenerTarifas();
+            dao.insertarOActualizarTodas(tarifas);
+            LOG.info("Importacion ARESEP completada: {} registros procesados", tarifas.size());
+            return tarifas.size();
         } catch (RuntimeException e) {
             LOG.error("Fallo la importacion ARESEP; se conserva la carga anterior", e);
             throw e;
         }
     }
 }
-

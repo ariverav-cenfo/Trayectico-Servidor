@@ -1,3 +1,60 @@
+-- V5__
+ALTER TABLE aresep_fare RENAME TO tarifas_aresep;
+
+ALTER TABLE tarifas_aresep RENAME COLUMN route_code TO codigo_ruta;
+ALTER TABLE tarifas_aresep RENAME COLUMN route_name TO nombre_ruta;
+ALTER TABLE tarifas_aresep RENAME COLUMN branch_code TO codigo_ramal;
+ALTER TABLE tarifas_aresep RENAME COLUMN branch_name TO nombre_ramal;
+ALTER TABLE tarifas_aresep RENAME COLUMN fraction_code TO codigo_fraccion;
+ALTER TABLE tarifas_aresep RENAME COLUMN fraction_name TO nombre_fraccion;
+ALTER TABLE tarifas_aresep RENAME COLUMN average_trip_km TO kilometros_promedio_viaje;
+ALTER TABLE tarifas_aresep RENAME COLUMN regular_fare TO tarifa_regular;
+ALTER TABLE tarifas_aresep RENAME COLUMN senior_fare TO tarifa_adulto_mayor;
+ALTER TABLE tarifas_aresep RENAME COLUMN resolution TO resolucion;
+ALTER TABLE tarifas_aresep RENAME COLUMN resolution_date TO fecha_resolucion;
+ALTER TABLE tarifas_aresep RENAME COLUMN gazette_number TO numero_gaceta;
+ALTER TABLE tarifas_aresep RENAME COLUMN gazette_supplement TO suplemento_gaceta;
+ALTER TABLE tarifas_aresep RENAME COLUMN gazette_date TO fecha_gaceta;
+ALTER TABLE tarifas_aresep RENAME COLUMN effective_date TO fecha_vigencia;
+ALTER TABLE tarifas_aresep RENAME COLUMN case_number TO numero_expediente;
+ALTER TABLE tarifas_aresep RENAME COLUMN operators TO operadores;
+ALTER TABLE tarifas_aresep RENAME COLUMN service_type TO tipo_servicio;
+ALTER TABLE tarifas_aresep RENAME COLUMN province TO provincia;
+ALTER TABLE tarifas_aresep RENAME COLUMN payment_method TO metodo_pago;
+ALTER TABLE tarifas_aresep RENAME COLUMN imported_at TO fecha_importacion;
+
+ALTER TABLE tarifas_aresep
+    RENAME CONSTRAINT uq_aresep_fare_fraction
+    TO uq_tarifas_aresep_codigo_fraccion;
+
+ALTER TABLE tarifas_aresep
+    RENAME CONSTRAINT ck_aresep_fare_regular_nonnegative
+    TO ck_tarifas_aresep_tarifa_regular_no_negativa;
+
+ALTER TABLE tarifas_aresep
+    RENAME CONSTRAINT ck_aresep_fare_senior_nonnegative
+    TO ck_tarifas_aresep_tarifa_adulto_mayor_no_negativa;
+
+ALTER TABLE tarifas_aresep
+    RENAME CONSTRAINT ck_aresep_fare_km_nonnegative
+    TO ck_tarifas_aresep_kilometros_no_negativos;
+
+ALTER INDEX idx_aresep_fare_route_branch
+    RENAME TO idx_tarifas_aresep_ruta_ramal;
+
+COMMENT ON TABLE tarifas_aresep IS
+    'Últimas tarifas ARESEP importadas. El importador debe validar la unicidad del código de fracción antes de insertar o actualizar.';
+
+COMMENT ON COLUMN tarifas_aresep.fecha_vigencia IS
+    'Inicio de la vigencia tarifaria reportada por ARESEP; es distinta de la fecha de importación.';
+
+COMMENT ON COLUMN tarifas_aresep.operadores IS
+    'Lista original de operadores de ARESEP, incluidos los identificadores legales; se conserva sin dividir.';
+
+COMMENT ON COLUMN tarifas_aresep.metodo_pago IS
+    'Métodos de pago verificados manualmente, por ejemplo Efectivo y Tarjeta. NULL significa desconocido. El importador ARESEP no sobrescribe este campo.';
+
+-- V2__
 ALTER TABLE route RENAME TO rutas;
 ALTER TABLE branch RENAME TO ramales;
 ALTER TABLE displacement RENAME TO recorridos;

@@ -1,6 +1,6 @@
 package com.example.trayecticoservidor.client;
 
-import com.example.trayecticoservidor.model.AresepFare;
+import com.example.trayecticoservidor.model.TarifaAresep;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,24 +21,24 @@ import java.util.List;
 @Component
 public class AresepClient {
     private final URI url;
-    private final Duration timeout;
+    private final Duration tiempoEspera;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public AresepClient(@Value("${aresep.url}") URI url,
-                       @Value("${aresep.timeout-seconds:120}") long timeoutSeconds) {
+                        @Value("${aresep.timeout-seconds:120}") long segundosTiempoEspera) {
         this.url = url;
-        this.timeout = Duration.ofSeconds(timeoutSeconds);
+        this.tiempoEspera = Duration.ofSeconds(segundosTiempoEspera);
     }
 
-    public List<AresepFare> fetchFares() {
+    public List<TarifaAresep> obtenerTarifas() {
         try (HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build()) {
-            HttpRequest request = HttpRequest.newBuilder(url).timeout(timeout)
+            HttpRequest solicitud = HttpRequest.newBuilder(url).timeout(tiempoEspera)
                     .header("Accept", "application/json").GET().build();
-            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
-                throw new IllegalStateException("ARESEP devolvio HTTP " + response.statusCode());
+            HttpResponse<String> respuesta = http.send(solicitud, HttpResponse.BodyHandlers.ofString());
+            if (respuesta.statusCode() != 200) {
+                throw new IllegalStateException("ARESEP devolvio HTTP " + respuesta.statusCode());
             }
-            return parseFares(response.body());
+            return analizarTarifas(respuesta.body());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Importacion ARESEP interrumpida", e);
@@ -47,68 +47,68 @@ public class AresepClient {
         }
     }
 
-    public List<AresepFare> parseFares(String json) {
+    public List<TarifaAresep> analizarTarifas(String json) {
         try {
-            JsonNode root = mapper.readTree(json);
-            if (root == null || !root.path("metadata").path("success").asBoolean(false)
-                    || root.path("metadata").path("status").asInt() != 200
-                    || !root.path("value").isArray() || root.path("value").isEmpty()) {
+            JsonNode raiz = mapper.readTree(json);
+            if (raiz == null || !raiz.path("metadata").path("success").asBoolean(false)
+                    || raiz.path("metadata").path("status").asInt() != 200
+                    || !raiz.path("value").isArray() || raiz.path("value").isEmpty()) {
                 throw new IllegalArgumentException("Respuesta ARESEP fallida o sin tarifas");
             }
-            List<AresepFare> fares = new ArrayList<>();
-            HashSet<String> codes = new HashSet<>();
-            for (JsonNode row : root.path("value")) {
-                String code = null;
+            List<TarifaAresep> tarifas = new ArrayList<>();
+            HashSet<String> codigos = new HashSet<>();
+            for (JsonNode fila : raiz.path("value")) {
+                String codigo = null;
                 try {
-                    code = required(row, "codigoFraccionamiento");
-                    if (!codes.add(code)) {
-                        throw new IllegalArgumentException("Fraccionamiento ARESEP duplicado: " + code);
+                    codigo = obligatorio(fila, "codigoFraccionamiento");
+                    if (!codigos.add(codigo)) {
+                        throw new IllegalArgumentException("Fraccionamiento ARESEP duplicado: " + codigo);
                     }
-                    fares.add(new AresepFare(required(row, "codigoRuta"), required(row, "nombreRuta"),
-                            required(row, "codigoRamal"), required(row, "nombreRamal"), code,
-                            required(row, "nombreFraccionamiento"), decimal(row, "promedioKmViaje", false),
-                            decimal(row, "tarifaRegular", true), decimal(row, "tarifaAdultoMayor", true),
-                            text(row, "resolucion"), date(row, "fechaResolucion", false),
-                            text(row, "gaceta"), text(row, "alcance"), date(row, "fechaGaceta", false),
-                            date(row, "fechaVigencia", true), text(row, "expediente"), text(row, "operadores"),
-                            text(row, "tipoServicio"), text(row, "provincia")));
+                    tarifas.add(new TarifaAresep(obligatorio(fila, "codigoRuta"), obligatorio(fila, "nombreRuta"),
+                            obligatorio(fila, "codigoRamal"), obligatorio(fila, "nombreRamal"), codigo,
+                            obligatorio(fila, "nombreFraccionamiento"), decimal(fila, "promedioKmViaje", false),
+                            decimal(fila, "tarifaRegular", true), decimal(fila, "tarifaAdultoMayor", true),
+                            texto(fila, "resolucion"), fecha(fila, "fechaResolucion", false),
+                            texto(fila, "gaceta"), texto(fila, "alcance"), fecha(fila, "fechaGaceta", false),
+                            fecha(fila, "fechaVigencia", true), texto(fila, "expediente"), texto(fila, "operadores"),
+                            texto(fila, "tipoServicio"), texto(fila, "provincia")));
                 } catch (IllegalArgumentException | ArithmeticException | java.time.DateTimeException e) {
                     throw new IllegalArgumentException("Fila ARESEP con codigoFraccionamiento="
-                            + (code == null ? "desconocido" : code) + ": " + e.getMessage(), e);
+                            + (codigo == null ? "desconocido" : codigo) + ": " + e.getMessage(), e);
                 }
             }
-            return List.copyOf(fares);
+            return List.copyOf(tarifas);
         } catch (IOException e) {
             throw new IllegalArgumentException("JSON de ARESEP invalido", e);
         }
     }
 
-    private static String text(JsonNode row, String field) {
-        JsonNode node = row.get(field);
-        if (node == null || node.isNull()) return null;
-        if (!node.isValueNode()) throw new IllegalArgumentException("Campo invalido: " + field);
-        return node.asText().strip();
+    private static String texto(JsonNode fila, String campo) {
+        JsonNode nodo = fila.get(campo);
+        if (nodo == null || nodo.isNull()) return null;
+        if (!nodo.isValueNode()) throw new IllegalArgumentException("Campo invalido: " + campo);
+        return nodo.asText().strip();
     }
 
-    private static String required(JsonNode row, String field) {
-        String value = text(row, field);
-        if (value == null || value.isBlank()) throw new IllegalArgumentException("Falta campo ARESEP: " + field);
-        return value;
+    private static String obligatorio(JsonNode fila, String campo) {
+        String valor = texto(fila, campo);
+        if (valor == null || valor.isBlank()) throw new IllegalArgumentException("Falta campo ARESEP: " + campo);
+        return valor;
     }
 
-    private static BigDecimal decimal(JsonNode row, String field, boolean required) {
-        String value = required ? required(row, field) : text(row, field);
-        if (value == null || value.isBlank()) return null;
-        BigDecimal amount = new BigDecimal(value).setScale(2, java.math.RoundingMode.UNNECESSARY);
-        if (amount.signum() < 0 || amount.precision() > 12) {
-            throw new IllegalArgumentException("Monto o distancia ARESEP fuera de rango: " + field);
+    private static BigDecimal decimal(JsonNode fila, String campo, boolean obligatorio) {
+        String valor = obligatorio ? obligatorio(fila, campo) : texto(fila, campo);
+        if (valor == null || valor.isBlank()) return null;
+        BigDecimal monto = new BigDecimal(valor).setScale(2, java.math.RoundingMode.UNNECESSARY);
+        if (monto.signum() < 0 || monto.precision() > 12) {
+            throw new IllegalArgumentException("Monto o distancia ARESEP fuera de rango: " + campo);
         }
-        return amount;
+        return monto;
     }
 
-    private static LocalDate date(JsonNode row, String field, boolean required) {
-        String value = required ? required(row, field) : text(row, field);
-        if (value == null || value.isBlank()) return null;
-        return java.time.LocalDateTime.parse(value).toLocalDate();
+    private static LocalDate fecha(JsonNode fila, String campo, boolean obligatorio) {
+        String valor = obligatorio ? obligatorio(fila, campo) : texto(fila, campo);
+        if (valor == null || valor.isBlank()) return null;
+        return java.time.LocalDateTime.parse(valor).toLocalDate();
     }
 }
