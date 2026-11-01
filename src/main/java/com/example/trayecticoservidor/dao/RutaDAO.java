@@ -9,12 +9,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-// Guarda una ruta importada en las tablas de la V2:
-// route, branch, displacement, stop y stop_displacement.
+// Guarda una ruta importada en las tablas de la V6:
+// rutas, ramales, recorridos, paradas y paradas_recorridos.
 //
-// 1.Se puede correr varias veces: ON CONFLICT (ctp_code) DO UPDATE actualiza en lugar de duplicar.
+// 1.Se puede correr varias veces: ON CONFLICT (codigo_ctp) DO UPDATE actualiza en lugar de duplicar.
 //   Tiene que ser DO UPDATE: con DO NOTHING, RETURNING id no devuelve nada si la fila ya existe.
-// 2.La columna active no se toca: es el interruptor del administrador, no un dato del CTP.
+// 2.La columna activo no se toca: es el interruptor del administrador, no un dato del CTP.
 // 3.El orden de paradas de cada recorrido se reemplaza completo.
 @Repository
 public class RutaDAO {
@@ -28,17 +28,17 @@ public class RutaDAO {
     @Transactional
     public void guardar(RutaImportada ruta) {
         long rutaId = jdbc.queryForObject("""
-                INSERT INTO route (ctp_code, ctp_id) VALUES (?, ?)
-                ON CONFLICT (ctp_code) DO UPDATE SET ctp_id = EXCLUDED.ctp_id
+                INSERT INTO rutas (codigo_ctp, id_ctp) VALUES (?, ?)
+                ON CONFLICT (codigo_ctp) DO UPDATE SET id_ctp = EXCLUDED.id_ctp
                 RETURNING id""",
                 Long.class, ruta.codigo(), ruta.ctpId());
 
         for (RamalImportado ramal : ruta.ramales()) {
             long ramalId = jdbc.queryForObject("""
-                    INSERT INTO branch (route_id, ctp_code, ctp_id, description)
+                    INSERT INTO ramales (ruta_id, codigo_ctp, id_ctp, descripcion)
                     VALUES (?, ?, ?, ?)
-                    ON CONFLICT (ctp_code) DO UPDATE SET route_id = EXCLUDED.route_id,
-                        ctp_id = EXCLUDED.ctp_id, description = EXCLUDED.description
+                    ON CONFLICT (codigo_ctp) DO UPDATE SET ruta_id = EXCLUDED.ruta_id,
+                        id_ctp = EXCLUDED.id_ctp, descripcion = EXCLUDED.descripcion
                     RETURNING id""",
                     Long.class, rutaId, ramal.codigo(), ramal.ctpId(), ramal.descripcion());
 
@@ -50,35 +50,35 @@ public class RutaDAO {
 
     private void guardarDesplazamiento(long ramalId, DesplazamientoImportado d) {
         long despId = jdbc.queryForObject("""
-                INSERT INTO displacement
-                    (branch_id, ctp_code, ctp_id, direction, length_m, ctp_status, geom)
+                INSERT INTO recorridos
+                    (ramal_id, codigo_ctp, id_ctp, direccion, longitud_m, estado_ctp, geometria)
                 VALUES (?, ?, ?, ?, ?, ?, ST_GeomFromText(?::text, 5367))
-                ON CONFLICT (ctp_code) DO UPDATE SET branch_id = EXCLUDED.branch_id,
-                    ctp_id = EXCLUDED.ctp_id, direction = EXCLUDED.direction,
-                    length_m = EXCLUDED.length_m, ctp_status = EXCLUDED.ctp_status,
-                    geom = EXCLUDED.geom
+                ON CONFLICT (codigo_ctp) DO UPDATE SET ramal_id = EXCLUDED.ramal_id,
+                    id_ctp = EXCLUDED.id_ctp, direccion = EXCLUDED.direccion,
+                    longitud_m = EXCLUDED.longitud_m, estado_ctp = EXCLUDED.estado_ctp,
+                    geometria = EXCLUDED.geometria
                 RETURNING id""",
                 Long.class, ramalId, d.codigo(), d.ctpId(), d.sentido(), d.longitudM(),
                 d.estadoCtp(), GeometriaWkt.linea(d.trazado()));
 
         // Se reemplaza el orden completo: si el CTP quitó una parada, no queda colgando.
-        jdbc.update("DELETE FROM stop_displacement WHERE displacement_id = ?", despId);
+        jdbc.update("DELETE FROM paradas_recorridos WHERE recorrido_id = ?", despId);
 
         for (ParadaImportada p : d.paradas()) {
             // La misma parada sale en muchos recorridos: se inserta una vez y se reutiliza.
             long paradaId = jdbc.queryForObject("""
-                    INSERT INTO stop
-                        (ctp_code, ctp_id, description, province, canton, district, geom)
+                    INSERT INTO paradas
+                        (codigo_ctp, id_ctp, descripcion, provincia, canton, distrito, geometria)
                     VALUES (?, ?, ?, ?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 5367))
-                    ON CONFLICT (ctp_code) DO UPDATE SET
-                        ctp_id = COALESCE(EXCLUDED.ctp_id, stop.ctp_id),
-                        description = EXCLUDED.description, geom = EXCLUDED.geom
+                    ON CONFLICT (codigo_ctp) DO UPDATE SET
+                        id_ctp = COALESCE(EXCLUDED.id_ctp, paradas.id_ctp),
+                        descripcion = EXCLUDED.descripcion, geometria = EXCLUDED.geometria
                     RETURNING id""",
                     Long.class, p.codigo(), p.ctpId(), p.descripcion(), p.provincia(),
                     p.canton(), p.distrito(), p.x(), p.y());
 
             jdbc.update("""
-                    INSERT INTO stop_displacement (displacement_id, stop_id, stop_order)
+                    INSERT INTO paradas_recorridos (recorrido_id, parada_id, orden_parada)
                     VALUES (?, ?, ?)""",
                     despId, paradaId, p.orden());
         }

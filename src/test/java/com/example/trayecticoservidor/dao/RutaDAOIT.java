@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// Necesita la base local levantada (docker compose) y con la V2 aplicada
+// Necesita la base local levantada (docker compose) y con la V6 aplicada
 // Se corre a mano. Usa códigos que empiezan con T- para no chocar con datos reales, y @Transactional revierte al terminar
 @SpringBootTest
 @Transactional
@@ -30,14 +30,14 @@ class RutaDAOIT {
         rutaDAO.guardar(ruta);
         rutaDAO.guardar(ruta);
 
-        assertEquals(1, contar("SELECT count(*) FROM route WHERE ctp_code = 'T-0002'"));
-        assertEquals(2, contar("SELECT count(*) FROM stop WHERE ctp_code LIKE 'T-PBA-%'"));
+        assertEquals(1, contar("SELECT count(*) FROM rutas WHERE codigo_ctp = 'T-0002'"));
+        assertEquals(2, contar("SELECT count(*) FROM paradas WHERE codigo_ctp LIKE 'T-PBA-%'"));
         assertEquals(2, contar("""
-                SELECT count(*) FROM stop_displacement sd
-                JOIN displacement d ON d.id = sd.displacement_id
-                WHERE d.ctp_code = 'T-0002-A-1'"""));
+                SELECT count(*) FROM paradas_recorridos pr
+                JOIN recorridos r ON r.id = pr.recorrido_id
+                WHERE r.codigo_ctp = 'T-0002-A-1'"""));
         assertEquals(5367, contar(
-                "SELECT ST_SRID(geom) FROM displacement WHERE ctp_code = 'T-0002-A-1'"));
+                "SELECT ST_SRID(geometria) FROM recorridos WHERE codigo_ctp = 'T-0002-A-1'"));
     }
 
     private int contar(String sql) {
