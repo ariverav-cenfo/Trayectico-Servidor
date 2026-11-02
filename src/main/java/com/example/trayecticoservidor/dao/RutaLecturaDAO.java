@@ -1,4 +1,5 @@
 package com.example.trayecticoservidor.dao;
+
 import com.example.trayecticoservidor.dto.RecorridoResumenDTO;
 import com.example.trayecticoservidor.dto.RamalResumenDTO;
 import com.example.trayecticoservidor.dto.RutaDetalleDTO;
@@ -20,16 +21,16 @@ import java.util.LinkedHashMap;
 public class RutaLecturaDAO {
     private final JdbcTemplate jdbc;
 
+    public RutaLecturaDAO(JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
+    }
+
     /**
      *Obtiene una lista resumida de todas las rutas disponibles en el sistema.
      *Propósito: Alimentar la vista principal de Angular con el código y nombre
      *de las rutas de manera rápida y ligera, sin cargar ramales ni desplazamientos.
      *@return Lista de RutaResumenDTO ordenada alfabéticamente por el código del CTP.
      */
-    public RutaLecturaDAO(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
-    }
-
     public List<RutaResumenDTO> obtenerRutas() {
         String sql = """
             SELECT r.ctp_code, 
@@ -71,36 +72,26 @@ public class RutaLecturaDAO {
                 WHERE r.ctp_code = ?
                 ORDER BY b.ctp_code, d.ctp_code
                 """;
-        // Usamos ResultSetExtractor (rs -> { ... }) porque una sola ruta generará múltiples filas en el ResultSet (una por cada desplazamiento).
-        // Necesitamos procesar todas las filas juntas para agrupar los datos en una sola estructura jerárquica.
+
         return jdbc.query(sql, rs -> {
-            // Si el ResultSet está vacío, significa que la ruta no existe (404 Not Found)
             if (!rs.next()) return null;
 
-            // Leemos los datos base de la ruta (son iguales en todas las filas del ResultSet)
             String routeName = rs.getString("route_name");
 
-            // Si la ruta no tiene nombre, heredamos el nombre del primer ramal (que viene en esta primera fila)
             if (routeName == null) {
                 routeName = rs.getString("branch_name");
             }
 
-            // Usamos un LinkedHashMap para agrupar los ramales por su código
-            // manteniendo el orden en el que vienen de la base de datos (ORDER BY b.ctp_code)
             Map<String, RamalBuilder> ramalesMap = new LinkedHashMap<>();
 
-            // Iteramos sobre todas las filas resultantes del JOIN
             do {
                 String branchCode = rs.getString("branch_code");
 
-                // Si la ruta tiene ramales, procesamos el ramal
                 if (branchCode != null) {
-                    // Si es la primera vez que vemos este ramal, lo añadimos al mapa
                     ramalesMap.putIfAbsent(branchCode, new RamalBuilder(branchCode, rs.getString("branch_name")));
 
                     String despCode = rs.getString("desp_code");
 
-                    // Si el ramal tiene desplazamientos, los añadimos a la lista de ese ramal específico
                     if (despCode != null) {
                         ramalesMap.get(branchCode).desplazamientos.add(new RecorridoResumenDTO(
                                 despCode, rs.getString("desp_direction"), rs.getBoolean("desp_active")
@@ -109,12 +100,10 @@ public class RutaLecturaDAO {
                 }
             } while (rs.next());
 
-            // Convertimos el mapa de constructores temporales a la lista final de DTOs inmutables
             List<RamalResumenDTO> ramales = ramalesMap.values().stream()
                     .map(b -> new RamalResumenDTO(b.codigo, b.nombre, b.desplazamientos))
                     .toList();
 
-            // Retornamos el DTO principal que agrupa todo
             return new RutaDetalleDTO(codigo, routeName, ramales);
         }, codigo);
     }
@@ -135,5 +124,4 @@ public class RutaLecturaDAO {
             this.nombre = nombre;
         }
     }
-
 }

@@ -8,6 +8,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Implementación del servicio de catálogo de rutas.
+ * Se encarga de coordinar el acceso a los datos mediante el DAO correspondiente.
+ */
 @Service
 public class CatalogoRutasServiceImpl implements CatalogoRutasService {
     private RutaLecturaDAO rutaLecturaDAO;
