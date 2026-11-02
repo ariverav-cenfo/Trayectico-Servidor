@@ -30,7 +30,7 @@ public class RutaController {
      * @return ResponseEntity con una lista de RutaResumenDTO y el código de estado 200 (OK).
      */
     @GetMapping
-    public ResponseEntity<List<RutaResumenDTO>> getRutas()
+    public ResponseEntity<List<RutaResumenDTO>> obtenerRutas()
     {
         log.debug("Solicitando el listado general de rutas");
         List<RutaResumenDTO> rutas = catalogoRutasService.obtenerRutas();
