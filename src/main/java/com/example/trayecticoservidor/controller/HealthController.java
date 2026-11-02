@@ -1,4 +1,4 @@
-package com.example.trayecticoservidor.controllers;
+package com.example.trayecticoservidor.controller;
 
 import com.example.trayecticoservidor.service.HealthService;
 import org.springframework.http.HttpStatus;
