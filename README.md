@@ -426,3 +426,30 @@ Pruebas del importador, sin consultar al CTP:
 | Integración CTP | Christian Suncin |
 | Infraestructura / Docker | Aaron Rivera |
 | Frontend / Angular | Gabriel Guerrero |
+
+## Cruce de tarifas ARESEP con rutas del CTP (SCRUM-36)
+
+El cruce genera `data/equivalencias-ramales.csv`, con una fila por cada ramal del CTP y el ramal de
+ARESEP que le corresponde. Ese archivo es la entrada de la carga de tarifas (SCRUM-91).
+
+1. Actualizar el pliego de ARESEP (solo cuando se quiera un pliego nuevo; el archivo ya está en el repo):
+
+   ```powershell
+   Invoke-WebRequest -Uri "https://datos.aresep.go.cr/ws.datosabiertos/Services/IT/PliegoTarifario.svc/ObtenerPliegoTarifarioAutobus/0" -OutFile data/aresep-tarifas.json
+   ```
+
+2. En IntelliJ, abrir `config/CruceTarifasRunner.java` y ejecutar el método `main`. No necesita la base
+   de datos ni Docker. Tarda unos minutos: le pide al CTP los ramales de cada ruta, con una pausa de
+   250 ms entre solicitudes.
+
+3. El log muestra los conteos por ruta y por ramal y la lista de rutas sin coincidencia.
+
+Tipos de coincidencia por ramal:
+
+| Tipo | Qué significa | ¿Se carga la tarifa? |
+|---|---|---|
+| `NOMBRE_EXACTO` | El nombre normalizado es igual al de un solo ramal de ARESEP | Sí |
+| `NOMBRE_AMBIGUO` | Es igual al de varios ramales de ARESEP | Después de elegir uno a mano |
+| `NOMBRE_PARECIDO` | Se parece (≥ 85 %), pero no es igual | Después de confirmarlo a mano |
+| `REVISAR` | La ruta existe en ARESEP, pero ningún ramal se parece | No, hasta revisarlo |
+| `SIN_RUTA_ARESEP` | ARESEP no publica esa ruta | No |
