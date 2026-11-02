@@ -46,7 +46,7 @@ public class RutaController {
      *         o un estado 404 (Not Found) si la ruta no existe.
      */
     @GetMapping("/{codigo}")
-    public ResponseEntity<RutaDetalleDTO> getRutaPorCodigo(@PathVariable String codigo){
+    public ResponseEntity<RutaDetalleDTO> obtenerRutaPorCodigo(@PathVariable String codigo){
         log.debug("Solicitando el detalle de la ruta con el código: {}", codigo);
 
         return catalogoRutasService.obtenerRutaPorCodigo(codigo).map(
