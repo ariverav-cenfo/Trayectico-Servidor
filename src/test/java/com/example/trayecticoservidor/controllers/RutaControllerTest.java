@@ -2,7 +2,8 @@ package com.example.trayecticoservidor.controllers;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.jdbc.Sql;
@@ -25,10 +26,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Sql(scripts = "/datos-prueba-rutas.sql",
         executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 public class RutaControllerTest {
-
-    private static final DockerImageName POSTGIS_NAME = DockerImageName.
-            parse("pgrouting/pgrouting:16-3.5-3.8").
-            asCompatibleSubstituteFor("postgres");
 
     @Container
     public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(
@@ -62,13 +59,9 @@ public class RutaControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.codigo_ruta").value("0002"))
-                // El nombre de la ruta debe coincidir con el primer ramal
                 .andExpect(jsonPath("$.nombre_ruta").value("SAN JOSÉ - SABANA CEMENTERIO"))
-                // Ahora insertamos 2 ramales en el SQL
                 .andExpect(jsonPath("$.ramales", hasSize(2)))
-                // El nombre del primer ramal
                 .andExpect(jsonPath("$.ramales[0].nombre_ramal").value("SAN JOSÉ - SABANA CEMENTERIO"))
-                // El primer ramal tiene 2 desplazamientos
                 .andExpect(jsonPath("$.ramales[0].recorridos", hasSize(2)));
     }
 
@@ -77,5 +70,5 @@ public class RutaControllerTest {
         mockMvc.perform(get("/rutas/9999"))
                 .andDo(print())
                 .andExpect(status().isNotFound());
-        }
+    }
 }

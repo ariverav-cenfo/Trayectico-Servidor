@@ -1,7 +1,6 @@
 package com.example.trayecticoservidor.dto;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  *Propósito: Estructurar la respuesta completa y jerárquica de una ruta en específico.
