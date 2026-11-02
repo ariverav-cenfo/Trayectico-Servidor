@@ -30,7 +30,7 @@ public class RutaController {
      * @return ResponseEntity con una lista de RutaResumenDTO y el código de estado 200 (OK).
      */
     @GetMapping
-    public ResponseEntity<List<RutaResumenDTO>> getRutas()
+    public ResponseEntity<List<RutaResumenDTO>> obtenerRutas()
     {
         log.debug("Solicitando el listado general de rutas");
         List<RutaResumenDTO> rutas = catalogoRutasService.obtenerRutas();
@@ -46,7 +46,7 @@ public class RutaController {
      *         o un estado 404 (Not Found) si la ruta no existe.
      */
     @GetMapping("/{codigo}")
-    public ResponseEntity<RutaDetalleDTO> getRutaPorCodigo(@PathVariable String codigo){
+    public ResponseEntity<RutaDetalleDTO> obtenerRutaPorCodigo(@PathVariable String codigo){
         log.debug("Solicitando el detalle de la ruta con el código: {}", codigo);
 
         return catalogoRutasService.obtenerRutaPorCodigo(codigo).map(
