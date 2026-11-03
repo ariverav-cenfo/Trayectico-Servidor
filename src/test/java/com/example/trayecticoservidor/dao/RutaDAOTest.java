@@ -26,19 +26,19 @@ class RutaDAOTest extends AbstractIntegrationTest {
 
     // La misma consulta del README (sección 11), con un WHERE para quedarse con los datos de esta prueba
     private static final String PARADAS_COMPARTIDAS = """
-            SELECT s.ctp_code AS parada,
-                   s.description AS descripcion,
-                   string_agg(DISTINCT r.ctp_code, ', ' ORDER BY r.ctp_code) AS rutas,
+            SELECT s.codigo_ctp AS parada,
+                   s.descripcion AS descripcion,
+                   string_agg(DISTINCT r.codigo_ctp, ', ' ORDER BY r.codigo_ctp) AS rutas,
                    count(DISTINCT r.id) AS cantidad_rutas
-            FROM stop s
-            JOIN stop_displacement sd ON sd.stop_id = s.id
-            JOIN displacement d ON d.id = sd.displacement_id
-            JOIN branch b ON b.id = d.branch_id
-            JOIN route r ON r.id = b.route_id
-            WHERE s.ctp_code LIKE 'T-%'
-            GROUP BY s.id, s.ctp_code, s.description
+            FROM paradas s
+            JOIN paradas_recorridos sd ON sd.parada_id = s.id
+            JOIN recorridos d ON d.id = sd.recorrido_id
+            JOIN ramales b ON b.id = d.ramal_id
+            JOIN rutas r ON r.id = b.ruta_id
+            WHERE s.codigo_ctp LIKE 'T-%'
+            GROUP BY s.id, s.codigo_ctp, s.descripcion
             HAVING count(DISTINCT r.id) >= 2
-            ORDER BY cantidad_rutas DESC, s.ctp_code""";
+            ORDER BY cantidad_rutas DESC, s.codigo_ctp""";
 
     @Autowired
     private RutaDAO rutaDAO;
@@ -76,14 +76,14 @@ class RutaDAOTest extends AbstractIntegrationTest {
 
     private Map<String, Integer> conteos() {
         return Map.of(
-                "rutas", contar("SELECT count(*) FROM route WHERE ctp_code LIKE 'T-%'"),
-                "ramales", contar("SELECT count(*) FROM branch WHERE ctp_code LIKE 'T-%'"),
-                "recorridos", contar("SELECT count(*) FROM displacement WHERE ctp_code LIKE 'T-%'"),
-                "paradas", contar("SELECT count(*) FROM stop WHERE ctp_code LIKE 'T-%'"),
+                "rutas", contar("SELECT count(*) FROM rutas WHERE codigo_ctp LIKE 'T-%'"),
+                "ramales", contar("SELECT count(*) FROM ramales WHERE codigo_ctp LIKE 'T-%'"),
+                "recorridos", contar("SELECT count(*) FROM recorridos WHERE codigo_ctp LIKE 'T-%'"),
+                "paradas", contar("SELECT count(*) FROM paradas WHERE codigo_ctp LIKE 'T-%'"),
                 "paradasEnRecorridos", contar("""
-                        SELECT count(*) FROM stop_displacement sd
-                        JOIN displacement d ON d.id = sd.displacement_id
-                        WHERE d.ctp_code LIKE 'T-%'"""));
+                        SELECT count(*) FROM paradas_recorridos sd
+                        JOIN recorridos d ON d.id = sd.recorrido_id
+                        WHERE d.codigo_ctp LIKE 'T-%'"""));
     }
 
     private int contar(String sql) {
@@ -110,6 +110,6 @@ class RutaDAOTest extends AbstractIntegrationTest {
     }
 
     private static ParadaImportada parada(String codigo, int orden, double x, double y) {
-        return new ParadaImportada(codigo, null, orden, "PARADA " + codigo, "1", "101", "10103", x, y);
+        return new ParadaImportada(codigo, (long) codigo.hashCode(), orden, "PARADA " + codigo, "1", "101", "10103", x, y);
     }
 }

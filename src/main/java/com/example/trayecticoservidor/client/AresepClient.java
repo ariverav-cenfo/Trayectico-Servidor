@@ -18,18 +18,33 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+/**
+ * Cliente encargado de descargar y procesar las tarifas publicadas por ARESEP.
+ */
 @Component
 public class AresepClient {
     private final URI url;
     private final Duration tiempoEspera;
     private final ObjectMapper mapper = new ObjectMapper();
 
+    /**
+     * Construye el cliente con la URL del servicio ARESEP y el tiempo máximo de espera.
+     *
+     * @param url URL del servicio de tarifas ARESEP.
+     * @param segundosTiempoEspera Tiempo máximo de espera de la solicitud en segundos.
+     */
     public AresepClient(@Value("${aresep.url}") URI url,
                         @Value("${aresep.timeout-seconds:120}") long segundosTiempoEspera) {
         this.url = url;
         this.tiempoEspera = Duration.ofSeconds(segundosTiempoEspera);
     }
 
+    /**
+     * Descarga las tarifas actuales desde el servicio de ARESEP y las procesa.
+     *
+     * @return Lista de tarifas obtenidas y validadas.
+     * @throws IllegalStateException Si falla la descarga o la respuesta HTTP no es exitosa.
+     */
     public List<TarifaAresep> obtenerTarifas() {
         try (HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build()) {
             HttpRequest solicitud = HttpRequest.newBuilder(url).timeout(tiempoEspera)
@@ -47,6 +62,13 @@ public class AresepClient {
         }
     }
 
+    /**
+     * Analiza y valida la respuesta JSON del servicio ARESEP.
+     *
+     * @param json Respuesta JSON obtenida del servicio ARESEP.
+     * @return Lista inmutable de tarifas procesadas.
+     * @throws IllegalArgumentException Si la respuesta es inválida, está vacía o contiene tarifas duplicadas.
+     */
     public List<TarifaAresep> analizarTarifas(String json) {
         try {
             JsonNode raiz = mapper.readTree(json);

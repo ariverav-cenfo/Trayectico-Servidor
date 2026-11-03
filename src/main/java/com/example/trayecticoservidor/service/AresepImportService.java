@@ -6,17 +6,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * Servicio encargado de coordinar la importación de tarifas publicadas por ARESEP.
+ */
 @Service
 public class AresepImportService {
     private static final Logger LOG = LoggerFactory.getLogger(AresepImportService.class);
     private final AresepClient cliente;
     private final TarifaAresepDAO dao;
 
+    /**
+     * Construye el servicio con el cliente ARESEP y el DAO de tarifas.
+     *
+     * @param cliente Cliente encargado de descargar y procesar las tarifas.
+     * @param dao DAO encargado de almacenar las tarifas en la base de datos.
+     */
     public AresepImportService(AresepClient cliente, TarifaAresepDAO dao) {
         this.cliente = cliente;
         this.dao = dao;
     }
 
+    /**
+     * Descarga, valida e importa las tarifas ARESEP a la base de datos.
+     *
+     * @return Cantidad de tarifas procesadas.
+     * @throws RuntimeException Si ocurre un error durante la descarga o importación.
+     */
     public int importarTarifas() {
         LOG.info("Iniciando importacion de tarifas ARESEP");
         try {

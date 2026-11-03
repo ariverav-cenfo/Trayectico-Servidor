@@ -101,7 +101,6 @@ ALTER TABLE rutas RENAME CONSTRAINT route_ctp_code_key TO uq_rutas_codigo_ctp;
 
 ALTER TABLE ramales RENAME CONSTRAINT branch_pkey TO pk_ramales;
 ALTER TABLE ramales RENAME CONSTRAINT branch_route_id_fkey TO fk_ramales_rutas;
-ALTER TABLE ramales RENAME CONSTRAINT branch_ctp_code_key TO uq_ramales_codigo_ctp;
 
 ALTER TABLE recorridos RENAME CONSTRAINT displacement_pkey TO pk_recorridos;
 ALTER TABLE recorridos RENAME CONSTRAINT displacement_branch_id_fkey TO fk_recorridos_ramales;
@@ -120,7 +119,6 @@ ALTER INDEX idx_displacement_geom RENAME TO idx_recorridos_geometria;
 ALTER INDEX idx_displacement_active RENAME TO idx_recorridos_activo;
 
 ALTER TABLE paradas
-    ALTER COLUMN id_ctp SET NOT NULL,
     ALTER COLUMN geometria TYPE geometry(Point, 5367)
         USING geometria::geometry(Point, 5367);
 
@@ -201,6 +199,18 @@ CREATE TABLE aristas (
              (tipo IN ('abordar', 'descender'))
              )
 );
+
+COMMENT ON COLUMN aristas.source IS
+    'Identificador del vertice de origen. El nombre source se conserva por requerimiento de pgRouting.';
+
+COMMENT ON COLUMN aristas.target IS
+    'Identificador del vertice de destino. El nombre target se conserva por requerimiento de pgRouting.';
+
+COMMENT ON COLUMN aristas.cost IS
+    'Costo de recorrido de la arista. El nombre cost se conserva por requerimiento de pgRouting.';
+
+COMMENT ON COLUMN aristas.reverse_cost IS
+    'Costo de recorrido inverso de la arista. El nombre reverse_cost se conserva por requerimiento de pgRouting.';
 
 CREATE INDEX idx_aristas_source ON aristas (source);
 CREATE INDEX idx_aristas_target ON aristas (target);

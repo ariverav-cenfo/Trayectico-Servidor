@@ -7,6 +7,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * DAO encargado de insertar y actualizar las tarifas ARESEP en la base de datos.
+ */
 @Repository
 public class TarifaAresepDAO {
     private final JdbcTemplate jdbc;
@@ -37,11 +40,21 @@ public class TarifaAresepDAO {
         WHERE EXCLUDED.fecha_vigencia >= tarifas_aresep.fecha_vigencia
         """;
 
+    /**
+     * Construye el DAO utilizando el acceso a la base de datos.
+     *
+     * @param jdbc JdbcTemplate utilizado para ejecutar las consultas SQL.
+     */
     public TarifaAresepDAO(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
     }
 
     // A failed batch rolls back the entire import. Download and validation happen before this transaction.
+    /**
+     * Inserta o actualiza un conjunto de tarifas ARESEP en una única operación transaccional.
+     *
+     * @param tarifas Lista de tarifas que se van a insertar o actualizar.
+     */
     @Transactional
     public void insertarOActualizarTodas(List<TarifaAresep> tarifas) {
         jdbc.batchUpdate(UPSERT, tarifas, 250, (statement, tarifa) -> {
