@@ -231,7 +231,7 @@ La URL puede configurarse con `ARESEP_URL`; el tiempo limite de respuesta se
 configura con `aresep.timeout-seconds` (120 segundos por defecto).
 `imported_at` indica la ultima importacion de cada tarifa, no su fecha de vigencia.
 
-La migración `V5__aresep_fares.sql` incluye `payment_method`, un campo de
+La migración `V5__aresep_fares.sql` incluye `metodo_pago`, un campo de
 texto opcional para registrar manualmente los métodos de pago verificados.
 `NULL` significa que no se conoce el dato. Se pueden anotar varios métodos, por
 ejemplo `Efectivo, Tarjeta`, únicamente cuando estén confirmados. La importación
@@ -257,10 +257,10 @@ Dentro de `psql`, listar las tablas con `\dt` y consultar:
 
 ```sql
 SELECT count(*) AS tarifas, max(imported_at) AS ultima_importacion
-FROM aresep_fare;
+FROM tarifas_aresep;
 
 SELECT route_code, fraction_code, fraction_name, regular_fare, effective_date
-FROM aresep_fare
+FROM tarifas_aresep
 ORDER BY fraction_code
 LIMIT 20;
 ```
@@ -276,7 +276,7 @@ Salir de `psql` con `\q` antes de ejecutar comandos de PowerShell.
   `DB_USER` en la terminal que ejecuta Maven. Configurar también `DB_PASSWORD`.
 - Error de contraseña con un usuario real: comprobar las credenciales originales
   del contenedor; cambiar `docker/.env` no cambia la contraseña de un volumen existente.
-- `relation "aresep_fare" does not exist`: comprobar que el servidor se conectó
+- `relation "tarifas_aresep" does not exist`: comprobar que el servidor se conectó
   a esta misma base y que Flyway aplicó `V5__aresep_fares.sql` sin errores.
 - Indicador `TrayecticoDB-#`: hay una sentencia pendiente. Cancelarla con Ctrl+C
   y volver a escribir la consulta SQL terminada en punto y coma.
