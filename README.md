@@ -346,6 +346,11 @@ importación de la 0300 falla y se revierte completa. Falta decidir qué hacer c
 dato del CTP (por ejemplo, saltarse el recorrido o quedarse con una de las dos paradas);
 mientras tanto, la 0300 queda fuera del grupo.
 
+**Ruta sin tarifa: 0403.** No aparece en los datos de tarifas de ARESEP (SCRUM-36). Se
+mantiene en el grupo porque comparte 6 paradas con la 0002, pero según la decisión del
+2 de noviembre de 2026 no se le carga tarifa. El primer viaje debe usar rutas que sí tienen
+tarifa.
+
 `RutasConectadas` cuenta las paradas de todos los recorridos de la 0002, y el importador
 solo guarda los activos. Por eso, en la base pueden quedar menos paradas compartidas que
 las de la tabla. La consulta de la siguiente sección muestra las que quedaron: el 28 de
