@@ -15,7 +15,7 @@ import java.util.LinkedHashMap;
 /**
  * DAO encargado exclusivamente de la lectura del catálogo de rutas.
  * Utiliza JdbcTemplate para ejecutar consultas SQL nativas sobre las tablas
- * del esquema V2 (route, branch, displacement).
+ * del esquema V2 (rutas, ramales, recorridos).
  */
 @Repository
 public class RutaLecturaDAO {

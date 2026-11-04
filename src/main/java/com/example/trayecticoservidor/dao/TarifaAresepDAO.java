@@ -49,7 +49,6 @@ public class TarifaAresepDAO {
         this.jdbc = jdbc;
     }
 
-    // A failed batch rolls back the entire import. Download and validation happen before this transaction.
     /**
      * Inserta o actualiza un conjunto de tarifas ARESEP en una única operación transaccional.
      *
