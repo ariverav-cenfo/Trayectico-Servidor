@@ -136,4 +136,53 @@ class CruceTarifasServiceTest {
                 lineas[1]);
         assertEquals("0082,4,0082-A,\"DICE \"\"ESCAZU\"\"\",,,,SIN_RUTA_ARESEP,0.00", lineas[2]);
     }
+    @Test
+    void losNombresVaciosNoProducenCoincidenciaExacta() {
+        List<AresepFare> tarifas = List.of(tarifa("02", "R0012", "-", "T1", "---"));
+        Map<Ruta, List<Ramal>> ctp = new LinkedHashMap<>();
+        ctp.put(new Ruta(56, "0002"), List.of(
+                new Ramal(1, "0002-A", null),
+                new Ramal(2, "0002-B", "  "),
+                new Ramal(3, "0002-C", "SAN JOSÉ - SABANA")));
+
+        List<EquivalenciaRamal> r = service.cruzarRamales(ctp, tarifas);
+
+        for (EquivalenciaRamal e : r) {
+            assertEquals(TipoCoincidencia.REVISAR, e.tipo());
+            assertNull(e.codigoRamalAresep());
+            assertEquals(0.0, e.puntaje());
+        }
+    }
+
+    @Test
+    void noMezclaRamalesConElMismoCodigoEnRutasDelMismoNumero() {
+        List<AresepFare> tarifas = List.of(
+                tarifa("80", "R0100", "SAN JOSE-SAN JUAN DE DIOS", "T1", "SAN JOSE-SAN JUAN DE DIOS"),
+                tarifa("80 A", "R0100", "SAN JOSE-ALAJUELITA", "T2", "SAN JOSE-ALAJUELITA"));
+        Map<Ruta, List<Ramal>> ctp = new LinkedHashMap<>();
+        ctp.put(new Ruta(80, "0080"), List.of(
+                new Ramal(1, "0080-A", "SAN JOSÉ - SAN JUAN DE DIOS"),
+                new Ramal(2, "0080-B", "SAN JOSÉ - ALAJUELITA")));
+
+        List<EquivalenciaRamal> r = service.cruzarRamales(ctp, tarifas);
+
+        assertEquals(TipoCoincidencia.NOMBRE_EXACTO, r.get(0).tipo());
+        assertEquals("80", r.get(0).codigoRutaAresep());
+        assertEquals(TipoCoincidencia.NOMBRE_EXACTO, r.get(1).tipo());
+        assertEquals("80 A", r.get(1).codigoRutaAresep());
+    }
+
+    @Test
+    void coincidePorElNombreDelFraccionamientoCuandoDifiereDelRamal() {
+        List<AresepFare> tarifas = List.of(
+                tarifa("09", "R0040", "SAN JOSE-ESCAZU", "T1", "SAN JOSE-ESCAZU POR GUACHIPELIN"));
+        Map<Ruta, List<Ramal>> ctp = new LinkedHashMap<>();
+        ctp.put(new Ruta(9, "0009"), List.of(new Ramal(1, "0009-A", "SAN JOSÉ - ESCAZÚ POR GUACHIPELÍN")));
+
+        EquivalenciaRamal e = service.cruzarRamales(ctp, tarifas).getFirst();
+
+        assertEquals(TipoCoincidencia.NOMBRE_EXACTO, e.tipo());
+        assertEquals("R0040", e.codigoRamalAresep());
+        assertEquals("SAN JOSE-ESCAZU", e.nombreRamalAresep());
+    }
 }

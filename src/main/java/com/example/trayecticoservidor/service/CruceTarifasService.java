@@ -127,12 +127,9 @@ public class CruceTarifasService {
     }
 
     /**
-     * Busca, para cada ramal del CTP, el ramal de ARESEP con el mismo nombre dentro de la misma ruta.
-     * Compara contra el nombre del ramal y contra los nombres de sus fraccionamientos.
-     *
-     * @param ramalesPorRuta ramales del CTP agrupados por su ruta
-     * @param tarifas        fraccionamientos de ARESEP
-     * @return una equivalencia por ramal del CTP, en el mismo orden de entrada
+     * Agrupa los ramales de ARESEP por numero de ruta; cada ramal guarda sus nombres normalizados.
+     * La llave de cada ramal es su ruta mas su codigo, para que dos rutas con el mismo numero
+     * ({@code 80} y {@code 80 A}) no mezclen sus ramales aunque repitan el codigo.
      */
     public List<EquivalenciaRamal> cruzarRamales(Map<Ruta, List<Ramal>> ramalesPorRuta, List<AresepFare> tarifas) {
         Map<String, Map<String, Candidato>> indice = indexar(tarifas);
@@ -171,13 +168,17 @@ public class CruceTarifasService {
             return equivalencia(codigoRuta, ramal, null, TipoCoincidencia.SIN_RUTA_ARESEP, 0.0);
         }
         String nombre = normalizarNombre(ramal.descripcion());
+        if (nombre.isEmpty()) {
+            // Un ramal sin nombre no se puede comparar: queda para revisar, sin candidato
+            return equivalencia(codigoRuta, ramal, null, TipoCoincidencia.REVISAR, 0.0);
+        }
         List<Candidato> exactos = candidatos.stream().filter(c -> c.nombres().contains(nombre)).toList();
         if (!exactos.isEmpty()) {
             TipoCoincidencia tipo = exactos.size() == 1 ? TipoCoincidencia.NOMBRE_EXACTO : TipoCoincidencia.NOMBRE_AMBIGUO;
             return equivalencia(codigoRuta, ramal, exactos.getFirst(), tipo, 1.0);
         }
         Candidato mejor = null;
-        double puntaje = -1;
+        double puntaje = 0.0;
         for (Candidato c : candidatos) {
             for (String otro : c.nombres()) {
                 double s = similitud(nombre, otro);
@@ -204,12 +205,20 @@ public class CruceTarifasService {
         tarifas.stream().sorted(Comparator.comparing(AresepFare::branchCode)).forEach(t ->
                 codigoNumerico(t.routeCode()).ifPresent(numero -> {
                     Candidato c = indice.computeIfAbsent(numero, k -> new LinkedHashMap<>())
-                            .computeIfAbsent(t.branchCode(), k -> new Candidato(t.routeCode(), t.branchCode(),
-                                    t.branchName(), new LinkedHashSet<>()));
-                    c.nombres().add(normalizarNombre(t.branchName()));
-                    c.nombres().add(normalizarNombre(t.fractionName()));
+                            .computeIfAbsent(t.routeCode() + "|" + t.branchCode(), k -> new Candidato(
+                                    t.routeCode(), t.branchCode(), t.branchName(), new LinkedHashSet<>()));
+                    agregarNombre(c.nombres(), t.branchName());
+                    agregarNombre(c.nombres(), t.fractionName());
                 }));
         return indice;
+    }
+
+    /** Agrega el nombre normalizado solo si no queda vacio: un nombre vacio no identifica ningun ramal. */
+    private static void agregarNombre(Set<String> nombres, String nombre) {
+        String normalizado = normalizarNombre(nombre);
+        if (!normalizado.isEmpty()) {
+            nombres.add(normalizado);
+        }
     }
 
     private static String completar(String digitos) {

@@ -453,3 +453,10 @@ Tipos de coincidencia por ramal:
 | `NOMBRE_PARECIDO` | Se parece (≥ 85 %), pero no es igual | Después de confirmarlo a mano |
 | `REVISAR` | La ruta existe en ARESEP, pero ningún ramal se parece | No, hasta revisarlo |
 | `SIN_RUTA_ARESEP` | ARESEP no publica esa ruta | No |
+
+El CSV trae todos los tipos de coincidencia. Por acuerdo para SCRUM-91, la primera carga toma solo las filas
+con `tipo_coincidencia = NOMBRE_EXACTO`: el proceso que consume el CSV debe aplicar ese filtro. Los ambiguos y
+parecidos se agregan cuando alguien los confirme a mano.
+
+Si el CTP no responde para alguna ruta (red o tiempo de espera), el cruce termina con error y no escribe el CSV;
+basta con volver a correrlo. Las rutas que el CTP lista sin ramales no son error: aparecen en el log aparte.

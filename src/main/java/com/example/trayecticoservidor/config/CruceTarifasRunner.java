@@ -6,6 +6,7 @@ import com.example.trayecticoservidor.model.EquivalenciaRamal;
 import com.example.trayecticoservidor.model.TipoCoincidencia;
 import com.example.trayecticoservidor.service.CruceTarifasService;
 import ctpcliente.CtpCliente;
+import ctpcliente.error.CtpServicioException;
 import ctpcliente.model.Ramal;
 import ctpcliente.model.Ruta;
 import org.slf4j.Logger;
@@ -49,7 +50,9 @@ public final class CruceTarifasRunner {
      * Ejecuta el cruce completo y escribe el CSV.
      *
      * @param args {@code [jsonAresep] [csvSalida]}, ambos opcionales
-     * @throws IOException si no se puede leer el JSON o escribir el CSV
+     * @throws IOException           si no se puede leer el JSON o escribir el CSV
+     * @throws IllegalStateException si no se pudieron leer los ramales de alguna ruta; en ese caso no se
+     *                               escribe el CSV, asi el anterior queda intacto
      */
     public static void main(String[] args) throws IOException {
         Path json = args.length > 0 ? Path.of(args[0]) : ARESEP_POR_DEFECTO;
@@ -64,9 +67,14 @@ public final class CruceTarifasRunner {
         log.info("ARESEP: {} fraccionamientos leidos de {}", tarifas.size(), json);
 
         Map<Ruta, List<Ramal>> ramalesPorRuta;
+        List<String> rutasSinRamales = new ArrayList<>();
         List<String> rutasFallidas = new ArrayList<>();
         try (CtpCliente ctp = new ConfigurationCtp().ctpCliente()) {
-            ramalesPorRuta = descargarRamales(ctp, rutasFallidas);
+            ramalesPorRuta = descargarRamales(ctp, rutasSinRamales, rutasFallidas);
+        }
+        if (!rutasFallidas.isEmpty()) {
+            throw new IllegalStateException("No se pudieron leer los ramales de " + rutasFallidas.size()
+                    + " rutas: " + rutasFallidas + ". No se escribio el CSV; vuelva a correr el cruce.");
         }
 
         CruceTarifasService service = new CruceTarifasService();
@@ -80,12 +88,16 @@ public final class CruceTarifasRunner {
         }
         Files.writeString(csv, service.aCsv(ramales), StandardCharsets.UTF_8);
 
-        reportar(rutas, ramales, rutasFallidas);
+        reportar(rutas, ramales, rutasSinRamales);
         log.info("CSV escrito en {}", csv.toAbsolutePath());
     }
 
-    /** Pide al CTP todas las rutas y sus ramales, en orden de codigo; anota las rutas que fallan y sigue. */
-    private static Map<Ruta, List<Ramal>> descargarRamales(CtpCliente ctp, List<String> rutasFallidas) {
+    /**
+     * Pide al CTP todas las rutas y sus ramales, en orden de codigo. Separa las rutas que el CTP lista sin
+     * ramales (responde result=false) de las que fallan por otro motivo (red, tiempo de espera).
+     */
+    private static Map<Ruta, List<Ramal>> descargarRamales(CtpCliente ctp, List<String> rutasSinRamales,
+                                                           List<String> rutasFallidas) {
         List<Ruta> rutas = ctp.visor().rutas().stream()
                 .sorted(Comparator.comparing((Ruta r) -> r.codigo().strip()).thenComparingInt(Ruta::id))
                 .toList();
@@ -98,11 +110,15 @@ public final class CruceTarifasRunner {
                 resultado.put(ruta, ctp.visor().ramales(ruta.id()).stream()
                         .sorted(Comparator.comparing(Ramal::codigo).thenComparingInt(Ramal::id))
                         .toList());
-            } catch (RuntimeException e) {
-                log.warn("Ruta {} (id {}): no se pudieron leer sus ramales: {}", ruta.codigo(), ruta.id(),
-                        e.getMessage());
-                rutasFallidas.add(ruta.codigo().strip());
+            } catch (CtpServicioException e) {
+                // El CTP responde result=false: la ruta esta en el catalogo pero no tiene ramales
+                log.info("Ruta {} (id {}): el CTP no devuelve ramales", ruta.codigo(), ruta.id());
+                rutasSinRamales.add(ruta.codigo().strip());
                 resultado.put(ruta, List.of());
+            } catch (RuntimeException e) {
+                log.error("Ruta {} (id {}): no se pudieron leer sus ramales: {}", ruta.codigo(), ruta.id(),
+                        e.getMessage(), e);
+                rutasFallidas.add(ruta.codigo().strip());
             }
             if (i % 50 == 0) {
                 log.info("CTP: {}/{} rutas", i, rutas.size());
@@ -113,7 +129,7 @@ public final class CruceTarifasRunner {
 
     /** Escribe en el log los conteos y las listas que van en la nota de SCRUM-36. */
     private static void reportar(Map<String, TipoCoincidencia> rutas, List<EquivalenciaRamal> ramales,
-                                 List<String> rutasFallidas) {
+                                 List<String> rutasSinRamales) {
         Map<TipoCoincidencia, TreeSet<String>> rutasPorTipo = new EnumMap<>(TipoCoincidencia.class);
         rutas.forEach((codigo, tipo) -> rutasPorTipo.computeIfAbsent(tipo, t -> new TreeSet<>()).add(codigo));
         Map<TipoCoincidencia, Integer> ramalesPorTipo = new EnumMap<>(TipoCoincidencia.class);
@@ -126,8 +142,6 @@ public final class CruceTarifasRunner {
                 rutasPorTipo.getOrDefault(TipoCoincidencia.SIN_COINCIDENCIA, new TreeSet<>()));
         log.info("==== Ramales del CTP: {} ====", ramales.size());
         ramalesPorTipo.forEach((tipo, cantidad) -> log.info("{}: {}", tipo, cantidad));
-        if (!rutasFallidas.isEmpty()) {
-            log.warn("Rutas cuyos ramales no se pudieron leer ({}): {}", rutasFallidas.size(), rutasFallidas);
-        }
+        log.info("Rutas sin ramales en el CTP ({}): {}", rutasSinRamales.size(), rutasSinRamales);
     }
 }
