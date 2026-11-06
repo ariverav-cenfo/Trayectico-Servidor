@@ -8,15 +8,14 @@ import org.springframework.stereotype.Component;
 @Component
 @ConditionalOnProperty(name = "aresep.import-on-startup", havingValue = "true")
 public class AresepImportRunner implements CommandLineRunner {
-    private final AresepImportService service;
+    private final AresepImportService servicio;
 
-    public AresepImportRunner(AresepImportService service) {
-        this.service = service;
+    public AresepImportRunner(AresepImportService servicio) {
+        this.servicio = servicio;
     }
 
     @Override
     public void run(String... args) {
-        service.importFares();
+        servicio.importarTarifas();
     }
 }
-

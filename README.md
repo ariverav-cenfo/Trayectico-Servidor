@@ -222,16 +222,16 @@ el arranque normal no descarga datos. Esta ejecucion manual no programa actualiz
 
 El proceso valida la respuesta completa antes de escribir y guarda todos los lotes
 en una transaccion. Un error conserva la carga anterior y se registra en la salida.
-Repetirlo actualiza por `fraction_code` sin duplicar filas; una vigencia anterior
+Repetirlo actualiza por `codigo_fraccion` sin duplicar filas; una vigencia anterior
 no reemplaza una mas reciente. No se eliminan tarifas ausentes de una descarga:
 todavia debe verificarse el alcance del servicio y su tratamiento de bajas.
 Los codigos ARESEP se conservan sin asumir equivalencias con CTP.
 
 La URL puede configurarse con `ARESEP_URL`; el tiempo limite de respuesta se
 configura con `aresep.timeout-seconds` (120 segundos por defecto).
-`imported_at` indica la ultima importacion de cada tarifa, no su fecha de vigencia.
+`fecha_importacion` indica la ultima importacion de cada tarifa, no su fecha de vigencia.
 
-La migración `V5__aresep_fares.sql` incluye `payment_method`, un campo de
+La migración `V5__aresep_fares.sql` crea `payment_method` y la migración `V6__correct_ctp_schema.sql` lo renombra a `metodo_pago`, un campo de
 texto opcional para registrar manualmente los métodos de pago verificados.
 `NULL` significa que no se conoce el dato. Se pueden anotar varios métodos, por
 ejemplo `Efectivo, Tarjeta`, únicamente cuando estén confirmados. La importación
@@ -256,17 +256,17 @@ docker exec -it postgres_db psql -U $env:DB_USER -d TrayecticoDB
 Dentro de `psql`, listar las tablas con `\dt` y consultar:
 
 ```sql
-SELECT count(*) AS tarifas, max(imported_at) AS ultima_importacion
-FROM aresep_fare;
+SELECT count(*) AS tarifas, max(fecha_importacion) AS ultima_importacion
+FROM tarifas_aresep;
 
-SELECT route_code, fraction_code, fraction_name, regular_fare, effective_date
-FROM aresep_fare
-ORDER BY fraction_code
+SELECT codigo_ruta, codigo_fraccion, nombre_fraccion, tarifa_regular, fecha_vigencia
+FROM tarifas_aresep
+ORDER BY codigo_fraccion
 LIMIT 20;
 ```
 
 Repetir la importación y consultar de nuevo. Si ARESEP devuelve los mismos
-registros, la cantidad se mantiene y `imported_at` se actualiza para las tarifas
+registros, la cantidad se mantiene y `fecha_importacion` se actualiza para las tarifas
 aceptadas. Si publica fraccionamientos nuevos, la cantidad puede aumentar.
 Salir de `psql` con `\q` antes de ejecutar comandos de PowerShell.
 
@@ -276,8 +276,8 @@ Salir de `psql` con `\q` antes de ejecutar comandos de PowerShell.
   `DB_USER` en la terminal que ejecuta Maven. Configurar también `DB_PASSWORD`.
 - Error de contraseña con un usuario real: comprobar las credenciales originales
   del contenedor; cambiar `docker/.env` no cambia la contraseña de un volumen existente.
-- `relation "aresep_fare" does not exist`: comprobar que el servidor se conectó
-  a esta misma base y que Flyway aplicó `V5__aresep_fares.sql` sin errores.
+- `relation "tarifas_aresep" does not exist`: comprobar que el servidor se conectó
+  a esta misma base y que Flyway aplicó `V6__correct_ctp_schema.sql` sin errores.
 - Indicador `TrayecticoDB-#`: hay una sentencia pendiente. Cancelarla con Ctrl+C
   y volver a escribir la consulta SQL terminada en punto y coma.
 
@@ -309,7 +309,7 @@ sin ellas, PowerShell puede partir el argumento por las comas y por el `-D`.
 - Si una ruta falla (el CTP no responde, el código no existe o una parada viene sin
   ubicación), se registra con `ERROR` y se sigue con las demás. Al final, si alguna
   falló, el arranque termina con error y el mensaje dice cuáles y por qué.
-- Reimportar no duplica: actualiza por `ctp_code`. Para reintentar basta con correr
+- Reimportar no duplica: actualiza por `codigo_ctp`. Para reintentar basta con correr
   solo las rutas que fallaron, por ejemplo `--trayectico.importar-ruta=0403`.
 - Se ignoran los espacios y los códigos repetidos. Una lista sin códigos da error
   antes de consultar al CTP.
@@ -375,31 +375,31 @@ docker exec -it postgres_db psql -U $env:DB_USER -d TrayecticoDB
 Rutas importadas, con sus ramales y recorridos:
 
 ```sql
-SELECT r.ctp_code AS ruta,
+SELECT r.codigo_ctp AS ruta,
        count(DISTINCT b.id) AS ramales,
        count(DISTINCT d.id) AS recorridos
-FROM route r
-LEFT JOIN branch b ON b.route_id = r.id
-LEFT JOIN displacement d ON d.branch_id = b.id
-GROUP BY r.ctp_code
-ORDER BY r.ctp_code;
+FROM rutas r
+       LEFT JOIN ramales b ON b.ruta_id = r.id
+       LEFT JOIN recorridos d ON d.ramal_id = b.id
+GROUP BY r.codigo_ctp
+ORDER BY r.codigo_ctp;
 ```
 
 Paradas compartidas por al menos dos rutas. Si devuelve filas, hay transbordos posibles:
 
 ```sql
-SELECT s.ctp_code AS parada,
-       s.description AS descripcion,
-       string_agg(DISTINCT r.ctp_code, ', ' ORDER BY r.ctp_code) AS rutas,
+SELECT s.codigo_ctp AS parada,
+       s.descripcion AS descripcion,
+       string_agg(DISTINCT r.codigo_ctp, ', ' ORDER BY r.codigo_ctp) AS rutas,
        count(DISTINCT r.id) AS cantidad_rutas
-FROM stop s
-JOIN stop_displacement sd ON sd.stop_id = s.id
-JOIN displacement d ON d.id = sd.displacement_id
-JOIN branch b ON b.id = d.branch_id
-JOIN route r ON r.id = b.route_id
-GROUP BY s.id, s.ctp_code, s.description
+FROM paradas s
+       JOIN paradas_recorridos sd ON sd.parada_id = s.id
+       JOIN recorridos d ON d.id = sd.recorrido_id
+       JOIN ramales b ON b.id = d.ramal_id
+       JOIN rutas r ON r.id = b.ruta_id
+GROUP BY s.id, s.codigo_ctp, s.descripcion
 HAVING count(DISTINCT r.id) >= 2
-ORDER BY cantidad_rutas DESC, s.ctp_code;
+ORDER BY cantidad_rutas DESC, s.codigo_ctp;
 ```
 
 Para comprobar que reimportar no duplica, correr este conteo, repetir la importación y
