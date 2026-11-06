@@ -1,7 +1,7 @@
 package com.example.trayecticoservidor.config;
 
 import com.example.trayecticoservidor.client.AresepClient;
-import com.example.trayecticoservidor.model.AresepFare;
+import com.example.trayecticoservidor.model.TarifaAresep;
 import com.example.trayecticoservidor.model.EquivalenciaRamal;
 import com.example.trayecticoservidor.model.TipoCoincidencia;
 import com.example.trayecticoservidor.service.CruceTarifasService;
@@ -62,8 +62,8 @@ public final class CruceTarifasRunner {
                     + ". Descarguelo primero (ver README, seccion del cruce de tarifas).");
         }
 
-        List<AresepFare> tarifas = new AresepClient(URI.create("http://localhost"), 1)
-                .parseFares(Files.readString(json, StandardCharsets.UTF_8));
+        List<TarifaAresep> tarifas = new AresepClient(URI.create("http://localhost"), 1)
+                .analizarTarifas(Files.readString(json, StandardCharsets.UTF_8));
         log.info("ARESEP: {} fraccionamientos leidos de {}", tarifas.size(), json);
 
         Map<Ruta, List<Ramal>> ramalesPorRuta;

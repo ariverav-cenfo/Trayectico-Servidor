@@ -1,6 +1,6 @@
 package com.example.trayecticoservidor.service;
 
-import com.example.trayecticoservidor.model.AresepFare;
+import com.example.trayecticoservidor.model.TarifaAresep;
 import com.example.trayecticoservidor.model.EquivalenciaRamal;
 import com.example.trayecticoservidor.model.TipoCoincidencia;
 import ctpcliente.model.Ramal;
@@ -22,8 +22,8 @@ class CruceTarifasServiceTest {
 
     private final CruceTarifasService service = new CruceTarifasService();
 
-    private static AresepFare tarifa(String ruta, String ramal, String nombreRamal, String fraccion, String nombreFraccion) {
-        return new AresepFare(ruta, nombreRamal, ramal, nombreRamal, fraccion, nombreFraccion, null,
+    private static TarifaAresep tarifa(String ruta, String ramal, String nombreRamal, String fraccion, String nombreFraccion) {
+        return new TarifaAresep(ruta, nombreRamal, ramal, nombreRamal, fraccion, nombreFraccion, null,
                 new BigDecimal("240.00"), BigDecimal.ZERO, null, null, null, null, null,
                 LocalDate.of(2026, 10, 28), null, null, null, null);
     }
@@ -68,7 +68,7 @@ class CruceTarifasServiceTest {
 
     @Test
     void clasificaRutasExactasSoloPorNumeroYSinCoincidencia() {
-        List<AresepFare> tarifas = List.of(
+        List<TarifaAresep> tarifas = List.of(
                 tarifa("02", "R0012", "SAN JOSE-SABANA-CEMENTERIO", "T1", "SAN JOSE-SABANA-CEMENTERIO"),
                 tarifa("80", "R0241", "SAN JOSE-SAN JUAN DE DIOS", "T2", "SAN JOSE-SAN JUAN DE DIOS"),
                 tarifa("80 A", "R0242", "SAN JOSE-ALAJUELITA", "T3", "SAN JOSE-ALAJUELITA"),
@@ -84,7 +84,7 @@ class CruceTarifasServiceTest {
 
     @Test
     void cruzaRamalesPorNombreDentroDeLaMismaRuta() {
-        List<AresepFare> tarifas = List.of(
+        List<TarifaAresep> tarifas = List.of(
                 tarifa("02", "R0012", "SAN JOSE-SABANA-CEMENTERIO", "T1", "SAN JOSE-SABANA-CEMENTERIO"),
                 tarifa("02", "R0013", "SAN JOSE-BARRIO LA PITAHAYA", "T2", "SAN JOSE-Bº LA PITAHAYA"),
                 tarifa("10", "R0066", "SAN JOSE-HOSPITAL MEJICO POR LA URUCA", "T3", "SAN JOSE-HOSPITAL MEJICO POR LA URUCA"),
@@ -138,7 +138,7 @@ class CruceTarifasServiceTest {
     }
     @Test
     void losNombresVaciosNoProducenCoincidenciaExacta() {
-        List<AresepFare> tarifas = List.of(tarifa("02", "R0012", "-", "T1", "---"));
+        List<TarifaAresep> tarifas = List.of(tarifa("02", "R0012", "-", "T1", "---"));
         Map<Ruta, List<Ramal>> ctp = new LinkedHashMap<>();
         ctp.put(new Ruta(56, "0002"), List.of(
                 new Ramal(1, "0002-A", null),
@@ -156,7 +156,7 @@ class CruceTarifasServiceTest {
 
     @Test
     void noMezclaRamalesConElMismoCodigoEnRutasDelMismoNumero() {
-        List<AresepFare> tarifas = List.of(
+        List<TarifaAresep> tarifas = List.of(
                 tarifa("80", "R0100", "SAN JOSE-SAN JUAN DE DIOS", "T1", "SAN JOSE-SAN JUAN DE DIOS"),
                 tarifa("80 A", "R0100", "SAN JOSE-ALAJUELITA", "T2", "SAN JOSE-ALAJUELITA"));
         Map<Ruta, List<Ramal>> ctp = new LinkedHashMap<>();
@@ -174,7 +174,7 @@ class CruceTarifasServiceTest {
 
     @Test
     void coincidePorElNombreDelFraccionamientoCuandoDifiereDelRamal() {
-        List<AresepFare> tarifas = List.of(
+        List<TarifaAresep> tarifas = List.of(
                 tarifa("09", "R0040", "SAN JOSE-ESCAZU", "T1", "SAN JOSE-ESCAZU POR GUACHIPELIN"));
         Map<Ruta, List<Ramal>> ctp = new LinkedHashMap<>();
         ctp.put(new Ruta(9, "0009"), List.of(new Ramal(1, "0009-A", "SAN JOSÉ - ESCAZÚ POR GUACHIPELÍN")));

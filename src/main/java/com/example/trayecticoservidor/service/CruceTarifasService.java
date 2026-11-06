@@ -1,6 +1,6 @@
 package com.example.trayecticoservidor.service;
 
-import com.example.trayecticoservidor.model.AresepFare;
+import com.example.trayecticoservidor.model.TarifaAresep;
 import com.example.trayecticoservidor.model.EquivalenciaRamal;
 import com.example.trayecticoservidor.model.TipoCoincidencia;
 import ctpcliente.model.Ramal;
@@ -105,12 +105,12 @@ public class CruceTarifasService {
      * @param tarifas    fraccionamientos de ARESEP
      * @return tipo de coincidencia por codigo de ruta, ordenado por codigo
      */
-    public Map<String, TipoCoincidencia> cruzarRutas(Collection<String> codigosCtp, List<AresepFare> tarifas) {
+    public Map<String, TipoCoincidencia> cruzarRutas(Collection<String> codigosCtp, List<TarifaAresep> tarifas) {
         Set<String> exactos = new LinkedHashSet<>();
         Set<String> numeros = new LinkedHashSet<>();
-        for (AresepFare tarifa : tarifas) {
-            exactos.add(codigoExacto(tarifa.routeCode()));
-            codigoNumerico(tarifa.routeCode()).ifPresent(numeros::add);
+        for (TarifaAresep tarifa : tarifas) {
+            exactos.add(codigoExacto(tarifa.codigoRuta()));
+            codigoNumerico(tarifa.codigoRuta()).ifPresent(numeros::add);
         }
         Map<String, TipoCoincidencia> resultado = new TreeMap<>();
         for (String codigo : codigosCtp) {
@@ -131,7 +131,7 @@ public class CruceTarifasService {
      * La llave de cada ramal es su ruta mas su codigo, para que dos rutas con el mismo numero
      * ({@code 80} y {@code 80 A}) no mezclen sus ramales aunque repitan el codigo.
      */
-    public List<EquivalenciaRamal> cruzarRamales(Map<Ruta, List<Ramal>> ramalesPorRuta, List<AresepFare> tarifas) {
+    public List<EquivalenciaRamal> cruzarRamales(Map<Ruta, List<Ramal>> ramalesPorRuta, List<TarifaAresep> tarifas) {
         Map<String, Map<String, Candidato>> indice = indexar(tarifas);
         List<EquivalenciaRamal> resultado = new ArrayList<>();
         ramalesPorRuta.forEach((ruta, ramales) -> {
@@ -200,15 +200,15 @@ public class CruceTarifasService {
     }
 
     /** Agrupa los ramales de ARESEP por numero de ruta; cada ramal guarda sus nombres normalizados. */
-    private static Map<String, Map<String, Candidato>> indexar(List<AresepFare> tarifas) {
+    private static Map<String, Map<String, Candidato>> indexar(List<TarifaAresep> tarifas) {
         Map<String, Map<String, Candidato>> indice = new HashMap<>();
-        tarifas.stream().sorted(Comparator.comparing(AresepFare::branchCode)).forEach(t ->
-                codigoNumerico(t.routeCode()).ifPresent(numero -> {
+        tarifas.stream().sorted(Comparator.comparing(TarifaAresep::codigoRamal)).forEach(t ->
+                codigoNumerico(t.codigoRuta()).ifPresent(numero -> {
                     Candidato c = indice.computeIfAbsent(numero, k -> new LinkedHashMap<>())
-                            .computeIfAbsent(t.routeCode() + "|" + t.branchCode(), k -> new Candidato(
-                                    t.routeCode(), t.branchCode(), t.branchName(), new LinkedHashSet<>()));
-                    agregarNombre(c.nombres(), t.branchName());
-                    agregarNombre(c.nombres(), t.fractionName());
+                            .computeIfAbsent(t.codigoRuta() + "|" + t.codigoRamal(), k -> new Candidato(
+                                    t.codigoRuta(), t.codigoRamal(), t.nombreRamal(), new LinkedHashSet<>()));
+                    agregarNombre(c.nombres(), t.nombreRamal());
+                    agregarNombre(c.nombres(), t.nombreFraccion());
                 }));
         return indice;
     }
