@@ -1,46 +1,45 @@
 package com.example.trayecticoservidor.service;
 
 import com.example.trayecticoservidor.client.AresepClient;
-import com.example.trayecticoservidor.dao.AresepFareDAO;
+import com.example.trayecticoservidor.dao.TarifaAresepDAO;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.net.URI;
-import com.example.trayecticoservidor.model.AresepFare;
+import com.example.trayecticoservidor.model.TarifaAresep;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AresepImportServiceTest {
     @Test
-    void downloadFailureDoesNotWriteToDatabase() {
-        var client = new AresepClient(URI.create("http://localhost"), 1) {
+    void falloDeDescargaNoEscribeEnLaBaseDeDatos() {
+        var cliente = new AresepClient(URI.create("http://localhost"), 1) {
             @Override
-            public List<AresepFare> fetchFares() {
+            public List<TarifaAresep> obtenerTarifas() {
                 throw new IllegalStateException("ARESEP no disponible");
             }
         };
-        var dao = new AresepFareDAO(null) {
+        var dao = new TarifaAresepDAO(null) {
             @Override
-            public void upsertAll(List<AresepFare> fares) {
+            public void insertarOActualizarTodas(List<TarifaAresep> tarifas) {
                 fail("No debe escribir si la descarga falla");
             }
         };
-        assertThrows(IllegalStateException.class, () -> new AresepImportService(client, dao).importFares());
+        assertThrows(IllegalStateException.class, () -> new AresepImportService(cliente, dao).importarTarifas());
     }
 
     @Test
-    void databaseFailureIsNotReportedAsSuccess() {
-        var client = new AresepClient(URI.create("http://localhost"), 1) {
+    void falloDeBaseDeDatosNoSeReportaComoExito() {
+        var cliente = new AresepClient(URI.create("http://localhost"), 1) {
             @Override
-            public List<AresepFare> fetchFares() {
+            public List<TarifaAresep> obtenerTarifas() {
                 return List.of();
             }
         };
-        var dao = new AresepFareDAO(null) {
+        var dao = new TarifaAresepDAO(null) {
             @Override
-            public void upsertAll(List<AresepFare> fares) {
+            public void insertarOActualizarTodas(List<TarifaAresep> tarifas) {
                 throw new IllegalStateException("BD no disponible");
             }
         };
-        assertThrows(IllegalStateException.class, () -> new AresepImportService(client, dao).importFares());
+        assertThrows(IllegalStateException.class, () -> new AresepImportService(cliente, dao).importarTarifas());
     }
 }
-
