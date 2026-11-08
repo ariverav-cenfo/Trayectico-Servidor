@@ -231,15 +231,12 @@ La URL puede configurarse con `ARESEP_URL`; el tiempo limite de respuesta se
 configura con `aresep.timeout-seconds` (120 segundos por defecto).
 `fecha_importacion` indica la ultima importacion de cada tarifa, no su fecha de vigencia.
 
-La migración `V5__aresep_fares.sql` crea `payment_method` y la migración `V6__correct_ctp_schema.sql` lo renombra a `metodo_pago`, un campo de
-texto opcional para registrar manualmente los métodos de pago verificados.
-`NULL` significa que no se conoce el dato. Se pueden anotar varios métodos, por
-ejemplo `Efectivo, Tarjeta`, únicamente cuando estén confirmados. La importación
-de ARESEP no modifica este campo. Flyway aplica la migración al iniciar el servidor
+La migración `V5__aresep_fares.sql` creó `payment_method`, la `V6__correct_ctp_schema.sql` la renombró
+a `metodo_pago` y la `V8__crear_equivalencias_ramales.sql` la elimina. El método de pago ahora se
+guarda por ramal, en `equivalencias_ramales.acepta_pago_electronico` (ver la sección de
+equivalencias de SCRUM-91). `NULL` significa que no se ha verificado.
+Flyway aplica la migración al iniciar el servidor
 contra una base nueva. Crear o iniciar el contenedor por sí solo no ejecuta Flyway.
-Si esta migración ya se aplicó antes de agregar la columna, editar el archivo no actualiza esa
-base y puede provocar un error de checksum. Esa base necesita una actualización
-coordinada de su esquema e historial de migraciones antes del siguiente arranque.
 
 La confirmación de éxito es el mensaje `Importacion ARESEP completada`.
 `BUILD SUCCESS` por sí solo no confirma la carga: revisar también los errores
