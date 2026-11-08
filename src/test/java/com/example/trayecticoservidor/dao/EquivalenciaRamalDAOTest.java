@@ -3,6 +3,7 @@ package com.example.trayecticoservidor.dao;
 import com.example.trayecticoservidor.AbstractIntegrationTest;
 import com.example.trayecticoservidor.model.EquivalenciaRamal;
 import com.example.trayecticoservidor.model.TarifaAresep;
+import com.example.trayecticoservidor.model.TarifaRamal;
 import com.example.trayecticoservidor.model.TipoCoincidencia;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -104,7 +105,7 @@ class EquivalenciaRamalDAOTest extends AbstractIntegrationTest {
 
     @Test
     void buscaLosRamalesImportadosYLosQueTienenTarifa() {
-        tarifaDao.insertarOActualizarTodas(List.of(tarifa("TEST-R9001")));
+        tarifaDao.insertarOActualizarTodas(List.of(tarifa("TEST-R9001", "TEST-T9001", "350.00")));
 
         assertTrue(dao.buscarIdsRamalesCtp().contains(ID_RAMAL_PRUEBA));
         assertFalse(dao.buscarIdsRamalesCtp().contains(ID_RAMAL_INEXISTENTE));
@@ -112,16 +113,54 @@ class EquivalenciaRamalDAOTest extends AbstractIntegrationTest {
         assertFalse(dao.buscarCodigosRamalAresepConTarifa().contains("TEST-R9999"));
     }
 
+    /** Ramal con un solo fraccionamiento: la tarifa es exacta. */
+    @Test
+    void unRamalConUnaFraccionTieneTarifaExacta() {
+        dao.insertarOActualizarTodas(List.of(equivalencia(ID_RAMAL_PRUEBA, 1.0)));
+        tarifaDao.insertarOActualizarTodas(List.of(tarifa("TEST-R9001", "TEST-T9001", "350.00")));
+
+        TarifaRamal tarifa = dao.buscarTarifaRamal(ID_RAMAL_PRUEBA).orElseThrow();
+
+        assertEquals(new BigDecimal("350.00"), tarifa.tarifaViajeCompleto());
+        assertEquals(1, tarifa.fracciones());
+        assertTrue(tarifa.esExacta());
+    }
+
+    /** Ramal con dos fraccionamientos: se toma la tarifa más alta y no es exacta. */
+    @Test
+    void unRamalConVariasFraccionesDevuelveLaTarifaMasAltaYNoEsExacta() {
+        dao.insertarOActualizarTodas(List.of(equivalencia(ID_RAMAL_PRUEBA, 1.0)));
+        tarifaDao.insertarOActualizarTodas(List.of(
+                tarifa("TEST-R9001", "TEST-T9001", "350.00"),
+                tarifa("TEST-R9001", "TEST-T9002", "500.00")));
+
+        TarifaRamal tarifa = dao.buscarTarifaRamal(ID_RAMAL_PRUEBA).orElseThrow();
+
+        assertEquals(new BigDecimal("500.00"), tarifa.tarifaViajeCompleto());
+        assertEquals(2, tarifa.fracciones());
+        assertFalse(tarifa.esExacta());
+    }
+
+    /** Sin equivalencia, o con equivalencia pero sin tarifas en ARESEP, no hay tarifa. */
+    @Test
+    void sinEquivalenciaOSinTarifasNoHayTarifa() {
+        assertTrue(dao.buscarTarifaRamal(ID_RAMAL_PRUEBA).isEmpty());
+
+        dao.insertarOActualizarTodas(List.of(equivalencia(ID_RAMAL_PRUEBA, 1.0)));
+
+        assertTrue(dao.buscarTarifaRamal(ID_RAMAL_PRUEBA).isEmpty());
+    }
+
     private static EquivalenciaRamal equivalencia(int idRamalCtp, double puntaje) {
         return new EquivalenciaRamal("TEST-9001", idRamalCtp, "TEST-9001-A", "Ramal de prueba",
                 "99", "TEST-R9001", "RAMAL DE PRUEBA", TipoCoincidencia.NOMBRE_EXACTO, puntaje);
     }
 
-    private static TarifaAresep tarifa(String codigoRamal) {
+    private static TarifaAresep tarifa(String codigoRamal, String codigoFraccion, String tarifaRegular) {
         LocalDate vigencia = LocalDate.of(2026, 9, 4);
         return new TarifaAresep("99", "RUTA DE PRUEBA", codigoRamal, "RAMAL DE PRUEBA",
-                "TEST-T9001", "RAMAL DE PRUEBA", new BigDecimal("5.00"),
-                new BigDecimal("350.00"), new BigDecimal("0.00"), "RE-001", vigencia,
+                codigoFraccion, "RAMAL DE PRUEBA", new BigDecimal("5.00"),
+                new BigDecimal(tarifaRegular), new BigDecimal("0.00"), "RE-001", vigencia,
                 "100", null, vigencia, vigencia, "ET-001", "Operador de prueba",
                 "Regular", "San Jose");
     }

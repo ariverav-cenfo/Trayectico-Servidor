@@ -1,12 +1,14 @@
 package com.example.trayecticoservidor.dao;
 
 import com.example.trayecticoservidor.model.EquivalenciaRamal;
+import com.example.trayecticoservidor.model.TarifaRamal;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -24,6 +26,18 @@ public class EquivalenciaRamalDAO {
         codigo_ramal_aresep = EXCLUDED.codigo_ramal_aresep,
         tipo_coincidencia = EXCLUDED.tipo_coincidencia,
         puntaje = EXCLUDED.puntaje
+        """;
+
+    /**
+     * Tarifa del viaje completo (la más alta) y cantidad de fraccionamientos de un ramal del CTP.
+     * Como usa funciones de agregación, siempre devuelve una fila: si el ramal no tiene
+     * equivalencia o no tiene tarifas, {@code fracciones} es 0 y la tarifa es NULL.
+     */
+    private static final String TARIFA_RAMAL = """
+        SELECT MAX(t.tarifa_regular) AS tarifa_viaje_completo, COUNT(t.id) AS fracciones
+        FROM equivalencias_ramales e
+        JOIN tarifas_aresep t ON t.codigo_ramal = e.codigo_ramal_aresep
+        WHERE e.id_ramal_ctp = ?
         """;
 
     private final JdbcTemplate jdbc;
@@ -72,6 +86,24 @@ public class EquivalenciaRamalDAO {
     public Set<String> buscarCodigosRamalAresepConTarifa() {
         return new HashSet<>(jdbc.queryForList(
                 "SELECT DISTINCT codigo_ramal FROM tarifas_aresep", String.class));
+    }
+
+    /**
+     * Busca la tarifa de un ramal del CTP a través de su equivalencia con ARESEP.
+     *
+     * @param idRamalCtp id del CTP del ramal ({@code ramales.id_ctp}).
+     * @return la tarifa del viaje completo y la cantidad de fraccionamientos, o vacío si el ramal
+     *         no tiene equivalencia o ARESEP no publica tarifas para él.
+     */
+    public Optional<TarifaRamal> buscarTarifaRamal(int idRamalCtp) {
+        return jdbc.queryForObject(TARIFA_RAMAL, (rs, numeroFila) -> {
+            int fracciones = rs.getInt("fracciones");
+            // Sin fracciones no hay tarifa: la fila trae MAX en NULL.
+            if (fracciones == 0) {
+                return Optional.<TarifaRamal>empty();
+            }
+            return Optional.of(new TarifaRamal(rs.getBigDecimal("tarifa_viaje_completo"), fracciones));
+        }, idRamalCtp);
     }
 
     /**
