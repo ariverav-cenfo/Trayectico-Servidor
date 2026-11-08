@@ -3,6 +3,8 @@ package com.example.trayecticoservidor.client;
 import com.example.trayecticoservidor.model.TarifaAresep;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +30,8 @@ import java.util.Map;
  */
 @Component
 public class AresepClient {
+    private static final Logger LOG = LoggerFactory.getLogger(AresepClient.class);
+
     private final URI url;
     private final Duration tiempoEspera;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -72,15 +76,16 @@ public class AresepClient {
     /**
      * Analiza y valida la respuesta JSON del servicio ARESEP.
      *
-     * <p>ARESEP a veces publica la misma fila dos veces (por ejemplo, el fraccionamiento T7223 en
-     * noviembre de 2026). Si las dos filas tienen exactamente los mismos datos, se usa una sola. Si
-     * tienen el mismo código pero datos distintos, no hay forma de saber cuál es la correcta y la
-     * respuesta completa se rechaza.</p>
+     * <p>ARESEP a veces publica el mismo fraccionamiento dos veces. Por ejemplo, en noviembre de 2026
+     * la T7223 vino repetida y solo cambiaba el promedio de kilómetros (33.00 y 33.10). Si las filas
+     * repetidas tienen la misma ruta, ramal, tarifas y fecha de vigencia, se conserva la primera y se
+     * deja una advertencia en el log. Si alguno de esos datos cambia, no hay forma de saber cuál es
+     * la tarifa correcta y se rechaza la respuesta completa.</p>
      *
      * @param json Respuesta JSON obtenida del servicio ARESEP.
      * @return Lista inmutable de tarifas procesadas, en el mismo orden del JSON y sin repetidos.
      * @throws IllegalArgumentException Si la respuesta es inválida, está vacía o repite un
-     *                                  fraccionamiento con datos distintos.
+     *                                  fraccionamiento con distinta tarifa o vigencia.
      */
     public List<TarifaAresep> analizarTarifas(String json) {
         try {
@@ -106,10 +111,14 @@ public class AresepClient {
                             fecha(fila, "fechaVigencia", true), texto(fila, "expediente"), texto(fila, "operadores"),
                             texto(fila, "tipoServicio"), texto(fila, "provincia"));
                     // putIfAbsent devuelve la tarifa que ya estaba con ese código, o null si es la primera vez.
-                    // TarifaAresep es un record: equals compara todos los campos.
                     TarifaAresep anterior = tarifas.putIfAbsent(codigo, tarifa);
-                    if (anterior != null && !anterior.equals(tarifa)) {
-                        throw new IllegalArgumentException("Fraccionamiento ARESEP duplicado con datos distintos: " + codigo);
+                    if (anterior != null) {
+                        if (!mismaTarifa(anterior, tarifa)) {
+                            throw new IllegalArgumentException(
+                                    "Fraccionamiento ARESEP duplicado con tarifa o vigencia distinta: " + codigo);
+                        }
+                        LOG.warn("Fraccionamiento ARESEP {} repetido con la misma tarifa; se conserva la primera fila.",
+                                codigo);
                     }
                 } catch (IllegalArgumentException | ArithmeticException | java.time.DateTimeException e) {
                     // Cualquier fila inválida rechaza la respuesta completa; el mensaje dice cuál fila falló.
@@ -121,6 +130,27 @@ public class AresepClient {
         } catch (IOException e) {
             throw new IllegalArgumentException("JSON de ARESEP invalido", e);
         }
+    }
+
+    /**
+     * Indica si dos filas del mismo fraccionamiento describen la misma tarifa.
+     *
+     * <p>Compara solo los datos que usa la aplicación: ruta, ramal, montos y fecha de vigencia.
+     * Los demás campos (kilómetros promedio, gaceta, expediente, operadores) pueden variar entre
+     * filas repetidas sin cambiar lo que paga el usuario. Los cinco campos comparados son
+     * obligatorios, así que nunca llegan en {@code null}.</p>
+     *
+     * @param a Primera fila leída del fraccionamiento.
+     * @param b Fila repetida del mismo fraccionamiento.
+     * @return {@code true} si ambas filas tienen la misma ruta, ramal, tarifas y vigencia.
+     */
+    private static boolean mismaTarifa(TarifaAresep a, TarifaAresep b) {
+        // compareTo en los montos para comparar el valor numérico sin depender de la escala.
+        return a.codigoRuta().equals(b.codigoRuta())
+                && a.codigoRamal().equals(b.codigoRamal())
+                && a.tarifaRegular().compareTo(b.tarifaRegular()) == 0
+                && a.tarifaAdultoMayor().compareTo(b.tarifaAdultoMayor()) == 0
+                && a.fechaVigencia().equals(b.fechaVigencia());
     }
 
     /**
@@ -148,8 +178,7 @@ public class AresepClient {
      * Lee un monto o una distancia con exactamente dos decimales.
      *
      * <p>{@code RoundingMode.UNNECESSARY} hace que un valor con más de dos decimales falle en lugar
-     * de redondearse en silencio. Como todos los montos quedan con escala 2, dos filas iguales dan
-     * {@link BigDecimal} iguales y la comparación de duplicados funciona.</p>
+     * de redondearse en silencio.</p>
      */
     private static BigDecimal decimal(JsonNode fila, String campo, boolean obligatorio) {
         String valor = obligatorio ? obligatorio(fila, campo) : texto(fila, campo);

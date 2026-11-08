@@ -10,14 +10,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Pruebas de {@link AresepClient#analizarTarifas(String)} sin red: cada prueba arma el JSON
- * que respondería ARESEP y revisa cómo se convierte o por qué se rechaza.
+ * Pruebas de {@link AresepClient#analizarTarifas(String)}. No usan red: el cliente apunta a
+ * localhost y solo se prueba el análisis del JSON.
  */
 class AresepClientTest {
-    // El cliente no descarga nada en estas pruebas, así que la URL y el tiempo de espera no importan.
     private final AresepClient cliente = new AresepClient(URI.create("http://localhost"), 1);
 
-    // Una fila válida del pliego de ARESEP. Las pruebas la copian y le cambian un valor para cada caso.
+    /** Fila base válida. Cada prueba la modifica con replace para armar el caso que necesita. */
     private static final String FILA = """
         {"codigoRuta":"I-1","nombreRuta":" DESAMPARADOS-MORAVIA ",
          "codigoRamal":"R0002","nombreRamal":"DESAMPARADOS-MORAVIA",
@@ -26,7 +25,7 @@ class AresepClientTest {
          "fechaVigencia":"2026-09-04T00:00:00.000","provincia":null}
         """;
 
-    /** Arma una respuesta exitosa de ARESEP con las filas dadas, separadas por coma. */
+    /** Envuelve las filas en una respuesta exitosa de ARESEP. */
     private String respuesta(String filas) {
         return "{\"metadata\":{\"success\":true,\"status\":200},\"value\":[" + filas + "]}";
     }
@@ -41,25 +40,49 @@ class AresepClientTest {
         assertNull(tarifa.provincia());
     }
 
-    // ARESEP a veces publica la misma fila dos veces (T7223, noviembre de 2026): se usa una sola.
+    /** Dos filas idénticas: se importa una sola. */
     @Test
     void unaFraccionRepetidaConLosMismosDatosSeImportaUnaVez() {
         List<TarifaAresep> tarifas = cliente.analizarTarifas(respuesta(FILA + "," + FILA));
 
         assertEquals(1, tarifas.size());
-        assertEquals("T0001", tarifas.getFirst().codigoFraccion());
     }
 
-    // Mismo código, distinta tarifa: no hay forma de saber cuál es la correcta, así que se rechaza todo.
+    /**
+     * Caso real T7223: misma tarifa y vigencia, solo cambia el promedio de kilómetros.
+     * Se importa una vez y se conserva la primera fila.
+     */
     @Test
-    void rechazaUnaFraccionRepetidaConDatosDistintos() {
-        String otraTarifa = FILA.replace("350.00", "400.00");
+    void unaFraccionRepetidaConOtrosKilometrosSeImportaUnaVez() {
+        String repetida = FILA.replace("13.15", "13.25");
+
+        List<TarifaAresep> tarifas = cliente.analizarTarifas(respuesta(FILA + "," + repetida));
+
+        assertEquals(1, tarifas.size());
+        assertEquals(new BigDecimal("13.15"), tarifas.getFirst().kilometrosPromedioViaje());
+    }
+
+    /** Mismo código con otra tarifa: no se sabe cuál es la correcta y se rechaza todo. */
+    @Test
+    void rechazaUnaFraccionRepetidaConTarifaDistinta() {
+        String repetida = FILA.replace("350.00", "400.00");
 
         var error = assertThrows(IllegalArgumentException.class,
-                () -> cliente.analizarTarifas(respuesta(FILA + "," + otraTarifa)));
+                () -> cliente.analizarTarifas(respuesta(FILA + "," + repetida)));
 
         assertTrue(error.getMessage().contains("codigoFraccionamiento=T0001"));
-        assertTrue(error.getMessage().contains("duplicado con datos distintos"));
+        assertTrue(error.getMessage().contains("duplicado con tarifa o vigencia distinta"));
+    }
+
+    /** Mismo código con otra fecha de vigencia: también se rechaza. */
+    @Test
+    void rechazaUnaFraccionRepetidaConVigenciaDistinta() {
+        String repetida = FILA.replace("2026-09-04T00:00:00.000", "2026-10-01T00:00:00.000");
+
+        var error = assertThrows(IllegalArgumentException.class,
+                () -> cliente.analizarTarifas(respuesta(FILA + "," + repetida)));
+
+        assertTrue(error.getMessage().contains("duplicado con tarifa o vigencia distinta"));
     }
 
     @Test
@@ -78,7 +101,6 @@ class AresepClientTest {
         }
     }
 
-    // La primera fila es válida y la segunda (T0002) no: el error tiene que decir cuál fila falló y por qué.
     @Test
     void erroresDeFilaIncluyenCodigoDeFraccionFallidoYCausaOriginal() {
         for (String filaInvalida : new String[]{
