@@ -3,14 +3,21 @@ package com.example.trayecticoservidor.client;
 import com.example.trayecticoservidor.model.TarifaAresep;
 import org.junit.jupiter.api.Test;
 
-import java.net.URI;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Pruebas de {@link AresepClient#analizarTarifas(String)} sin red: cada prueba arma el JSON
+ * que respondería ARESEP y revisa cómo se convierte o por qué se rechaza.
+ */
 class AresepClientTest {
+    // El cliente no descarga nada en estas pruebas, así que la URL y el tiempo de espera no importan.
     private final AresepClient cliente = new AresepClient(URI.create("http://localhost"), 1);
 
+    // Una fila válida del pliego de ARESEP. Las pruebas la copian y le cambian un valor para cada caso.
     private static final String FILA = """
         {"codigoRuta":"I-1","nombreRuta":" DESAMPARADOS-MORAVIA ",
          "codigoRamal":"R0002","nombreRamal":"DESAMPARADOS-MORAVIA",
@@ -19,6 +26,7 @@ class AresepClientTest {
          "fechaVigencia":"2026-09-04T00:00:00.000","provincia":null}
         """;
 
+    /** Arma una respuesta exitosa de ARESEP con las filas dadas, separadas por coma. */
     private String respuesta(String filas) {
         return "{\"metadata\":{\"success\":true,\"status\":200},\"value\":[" + filas + "]}";
     }
@@ -33,10 +41,25 @@ class AresepClientTest {
         assertNull(tarifa.provincia());
     }
 
+    // ARESEP a veces publica la misma fila dos veces (T7223, noviembre de 2026): se usa una sola.
     @Test
-    void rechazaFraccionesDuplicadas() {
-        assertThrows(IllegalArgumentException.class,
-                () -> cliente.analizarTarifas(respuesta(FILA + "," + FILA)));
+    void unaFraccionRepetidaConLosMismosDatosSeImportaUnaVez() {
+        List<TarifaAresep> tarifas = cliente.analizarTarifas(respuesta(FILA + "," + FILA));
+
+        assertEquals(1, tarifas.size());
+        assertEquals("T0001", tarifas.getFirst().codigoFraccion());
+    }
+
+    // Mismo código, distinta tarifa: no hay forma de saber cuál es la correcta, así que se rechaza todo.
+    @Test
+    void rechazaUnaFraccionRepetidaConDatosDistintos() {
+        String otraTarifa = FILA.replace("350.00", "400.00");
+
+        var error = assertThrows(IllegalArgumentException.class,
+                () -> cliente.analizarTarifas(respuesta(FILA + "," + otraTarifa)));
+
+        assertTrue(error.getMessage().contains("codigoFraccionamiento=T0001"));
+        assertTrue(error.getMessage().contains("duplicado con datos distintos"));
     }
 
     @Test
@@ -55,6 +78,7 @@ class AresepClientTest {
         }
     }
 
+    // La primera fila es válida y la segunda (T0002) no: el error tiene que decir cuál fila falló y por qué.
     @Test
     void erroresDeFilaIncluyenCodigoDeFraccionFallidoYCausaOriginal() {
         for (String filaInvalida : new String[]{
