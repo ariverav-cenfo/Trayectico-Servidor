@@ -430,7 +430,7 @@ Esta sección describe cómo verificar que la migración V7 construye correctame
 1. Se aplica en una base limpia.
 2. Ejecutar todas las migraciones en orden, incluyendo V7.
 3. Confirmar que todas las migraciones finalizan sin errores.
-4. Importar los datos correspondientes al recorrido `0002-A-1`, ver seccion 11.
+4. Importar los datos correspondientes al recorrido `0002-A-1`, ver sección 11.
 
 ### 12.2. Verificación de las tablas
 
@@ -448,7 +448,11 @@ El resultado debe contener ambas tablas.
 
 ### 12.3. Verificación de la construcción del grafo
 
-Ejecutar el procedimiento de construcción del grafo definido en V7.
+Después de importar los datos correspondientes al recorrido `0002-A-1` (sección 11), ejecutar la función de construcción del grafo definida en V7:
+
+```sql
+SELECT construir_grafo();
+```
 
 Registrar los siguientes conteos:
 
@@ -458,7 +462,7 @@ SELECT
     (SELECT COUNT(*) FROM aristas) AS total_aristas;
 ```
 
-Ejecutar nuevamente el procedimiento de construcción del grafo y repetir la consulta.
+Ejecutar nuevamente la función `construir_grafo()` y repetir la consulta anterior.
 
 Los conteos de ambas ejecuciones deben ser iguales. La segunda ejecución no debe generar registros duplicados.
 
