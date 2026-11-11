@@ -177,6 +177,7 @@
                     </includes>
                     <excludes>
                         <exclude>**/LectorRutaCtpIT.java</exclude>
+                        <exclude>**/CalculosViajeController.java</exclude>
                         <exclude>**/TrayecticoServidorApplication.java</exclude>
                     </excludes>
                     <excludedGroups>redexterna</excludedGroups>

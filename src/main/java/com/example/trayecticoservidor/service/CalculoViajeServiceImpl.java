@@ -12,6 +12,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Service para el calculo de los viajes
+ *
+ */
 @Service
 public class CalculoViajeServiceImpl implements CalculoViajeService{
     private final CalculoViajeDAO calculoViajeDAO;
