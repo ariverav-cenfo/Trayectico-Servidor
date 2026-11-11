@@ -2,6 +2,7 @@ package com.example.trayecticoservidor.service;
 
 import com.example.trayecticoservidor.dao.RutaDAO;
 import com.example.trayecticoservidor.dto.RutaImportada;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +38,7 @@ public class ImportadorRuta implements ApplicationRunner {
     private final LectorRutaCtpService lector;
     private final RutaDAO rutaDAO;
     private final List<String> codigosRuta;
+    private final JdbcTemplate jdbc;
 
     /**
      * Crea el importador y revisa la lista de rutas antes de que arranque la importación.
@@ -47,10 +49,12 @@ public class ImportadorRuta implements ApplicationRunner {
      * @throws IllegalArgumentException si la lista no trae ningún código; se revisa antes de llamar al CTP
      */
     public ImportadorRuta(LectorRutaCtpService lector, RutaDAO rutaDAO,
-                          @Value("${trayectico.importar-ruta}") String codigosRuta) {
+                          @Value("${trayectico.importar-ruta}") String codigosRuta,
+                          JdbcTemplate jdbc) {
         this.lector = lector;
         this.rutaDAO = rutaDAO;
         this.codigosRuta = codigos(codigosRuta);
+        this.jdbc = jdbc;
     }
 
     /**
@@ -80,6 +84,9 @@ public class ImportadorRuta implements ApplicationRunner {
             throw new IllegalStateException("No se importaron " + fallidas.size() + " de "
                     + codigosRuta.size() + " rutas: " + String.join(", ", fallidas));
         }
+
+        jdbc.execute("SELECT construir_grafo()");
+        log.info("Grafo construido correctamente");
     }
 
     /**

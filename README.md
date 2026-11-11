@@ -406,11 +406,11 @@ Para comprobar que reimportar no duplica, correr este conteo, repetir la importa
 correrlo de nuevo. Si el CTP no cambió nada entre las dos corridas, los números son iguales:
 
 ```sql
-SELECT (SELECT count(*) FROM route)             AS rutas,
-       (SELECT count(*) FROM branch)            AS ramales,
-       (SELECT count(*) FROM displacement)      AS recorridos,
-       (SELECT count(*) FROM stop)              AS paradas,
-       (SELECT count(*) FROM stop_displacement) AS paradas_en_recorridos;
+SELECT (SELECT count(*) FROM rutas)             AS rutas,
+       (SELECT count(*) FROM ramales)            AS ramales,
+       (SELECT count(*) FROM recorridos)      AS recorridos,
+       (SELECT count(*) FROM paradas)              AS paradas,
+       (SELECT count(*) FROM paradas_recorridos) AS paradas_en_recorridos;
 ```
 
 Pruebas del importador, sin consultar al CTP:
@@ -421,7 +421,117 @@ Pruebas del importador, sin consultar al CTP:
 
 `RutaDAOTest` usa Testcontainers, así que Docker Desktop tiene que estar abierto.
 
-## 12. Responsables por bloque
+## 12. Validación de la construcción del grafo
+
+Esta sección describe cómo verificar que la migración V7 construye correctamente el grafo de transporte público y que su ejecución cumple con las condiciones esperadas.
+
+### 12.1. Aplicación de migraciones
+
+1. Se aplica en una base limpia.
+2. Ejecutar todas las migraciones en orden, incluyendo V7.
+3. Confirmar que todas las migraciones finalizan sin errores.
+4. Importar los datos correspondientes al recorrido `0002-A-1`, ver sección 11.
+
+### 12.2. Verificación de las tablas
+
+Comprobar que las tablas `vertices` y `aristas` existen:
+
+```sql
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN ('vertices', 'aristas')
+ORDER BY table_name;
+```
+
+El resultado debe contener ambas tablas.
+
+### 12.3. Verificación de la construcción del grafo
+
+Después de importar los datos correspondientes al recorrido 0002-A-1 (sección 11), el importador ejecuta automáticamente construir_grafo(), siempre que todas las rutas se hayan importado correctamente.
+
+Registrar los siguientes conteos:
+
+```sql
+SELECT
+    (SELECT COUNT(*) FROM vertices) AS total_vertices,
+    (SELECT COUNT(*) FROM aristas) AS total_aristas;
+```
+
+Para comprobar que la reconstrucción no genera registros duplicados, ejecutar manualmente nuevamente la función: `construir_grafo()` y repetir la consulta anterior.
+
+```sql
+SELECT construir_grafo();
+```
+
+Los conteos de ambas ejecuciones deben ser iguales. La segunda ejecución no debe generar registros duplicados.
+
+### 12.4. Identificación de los vértices de origen y destino
+
+Para comprobar el recorrido `0002-A-1`, identificar primero su ID:
+
+```sql
+SELECT *
+FROM recorridos
+WHERE codigo_ctp = '0002-A-1';
+```
+
+Utilizar el `id` obtenido para consultar su primera y última parada:
+
+```sql
+SELECT *
+FROM paradas_recorridos
+WHERE recorrido_id = 2
+ORDER BY orden_parada ASC
+LIMIT 1;
+
+SELECT *
+FROM paradas_recorridos
+WHERE recorrido_id = 2
+ORDER BY orden_parada DESC
+LIMIT 1;
+```
+
+Sustituir `2` por el ID obtenido en la consulta anterior.
+
+Identificar los vértices asociados a ambas paradas:
+
+```sql
+SELECT *
+FROM vertices
+WHERE parada_id IN (1, 21);
+```
+
+Sustituir `1` y `21` por los IDs de las paradas inicial y final obtenidos anteriormente.
+
+Para ejecutar Dijkstra deben utilizarse los vértices de tipo `en_bus` correspondientes al recorrido consultado, no los vértices físicos de tipo `parada`.
+
+### 12.5. Verificación de conectividad mediante pgRouting
+
+Ejecutar `pgr_dijkstra` utilizando los vértices de origen y destino identificados en el apartado anterior:
+
+```sql
+SELECT *
+FROM pgr_dijkstra(
+    'SELECT id, source, target, cost, reverse_cost FROM aristas',
+    1334,
+    1354,
+    directed := true
+);
+```
+
+Sustituir `1334` y `1354` por los IDs correspondientes al recorrido consultado.
+
+**Resultado esperado:**
+
+- La consulta debe devolver un camino entre los vértices indicados.
+- La última fila debe alcanzar el vértice de destino.
+- El costo acumulado debe ser finito.
+- No debe existir un resultado vacío que indique ausencia de conexión.
+
+El algoritmo selecciona el camino de menor costo disponible.
+
+## 13. Responsables por bloque
 
 | **Bloque** | **Responsable** |
 |---|---|

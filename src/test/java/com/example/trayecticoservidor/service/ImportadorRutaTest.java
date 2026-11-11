@@ -8,6 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InOrder;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 
@@ -19,13 +20,14 @@ class ImportadorRutaTest {
 
     private final LectorRutaCtpService lector = mock(LectorRutaCtpService.class);
     private final RutaDAO rutaDAO = mock(RutaDAO.class);
+    private final JdbcTemplate jdbc = mock(JdbcTemplate.class);
 
     @Test
     void leeLaRutaPedidaYLaGuarda() {
         RutaImportada ruta = new RutaImportada(56, "0002", List.of());
         when(lector.leer("0002")).thenReturn(ruta);
 
-        new ImportadorRuta(lector, rutaDAO, "0002").run(null);
+        new ImportadorRuta(lector, rutaDAO, "0002", jdbc).run(null);
 
         verify(lector).leer("0002");
         verify(rutaDAO).guardar(ruta);
@@ -38,7 +40,7 @@ class ImportadorRutaTest {
         RutaImportada r2 = rutaQueSeLee("0090");
         RutaImportada r3 = rutaQueSeLee("0403");
 
-        new ImportadorRuta(lector, rutaDAO, "0002,0090,0403").run(null);
+        new ImportadorRuta(lector, rutaDAO, "0002,0090,0403", jdbc).run(null);
 
         InOrder orden = inOrder(lector, rutaDAO);
         orden.verify(lector).leer("0002");
@@ -65,7 +67,7 @@ class ImportadorRutaTest {
         rutaQueSeLee("0002");
         rutaQueSeLee("0090");
 
-        new ImportadorRuta(lector, rutaDAO, "0002,0090, 0002").run(null);
+        new ImportadorRuta(lector, rutaDAO, "0002,0090, 0002", jdbc).run(null);
 
         assertEquals(List.of("0002", "0090"), ImportadorRuta.codigos("0002,0090, 0002"));
         verify(lector, times(1)).leer("0002");
@@ -77,7 +79,7 @@ class ImportadorRutaTest {
     @ValueSource(strings = {"", " ", ",", " , , "})
     void unaListaSinCodigosFallaSinLlamarAlCtp(String valor) {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> new ImportadorRuta(lector, rutaDAO, valor));
+                () -> new ImportadorRuta(lector, rutaDAO, valor, jdbc));
 
         assertTrue(e.getMessage().contains("trayectico.importar-ruta"));
         verifyNoInteractions(lector, rutaDAO);
@@ -90,7 +92,7 @@ class ImportadorRutaTest {
         when(lector.leer("9999")).thenThrow(new CtpNoEncontradoException("Ruta no encontrada: 9999"));
         RutaImportada r3 = rutaQueSeLee("0090");
 
-        ImportadorRuta importador = new ImportadorRuta(lector, rutaDAO, "0002,9999,0090");
+        ImportadorRuta importador = new ImportadorRuta(lector, rutaDAO, "0002,9999,0090", jdbc);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> importador.run(null));
 
         verify(rutaDAO).guardar(r3);
@@ -106,7 +108,7 @@ class ImportadorRutaTest {
         RutaImportada r2 = rutaQueSeLee("0090");
         doThrow(new DataIntegrityViolationException("dato invalido")).when(rutaDAO).guardar(r1);
 
-        ImportadorRuta importador = new ImportadorRuta(lector, rutaDAO, "0002,0090");
+        ImportadorRuta importador = new ImportadorRuta(lector, rutaDAO, "0002,0090", jdbc);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> importador.run(null));
 
         verify(rutaDAO).guardar(r2);
@@ -118,7 +120,7 @@ class ImportadorRutaTest {
     void unaSolaRutaQueFallaTerminaConError() {
         when(lector.leer("0002")).thenThrow(new IllegalStateException("La parada X viene sin ubicación"));
 
-        ImportadorRuta importador = new ImportadorRuta(lector, rutaDAO, "0002");
+        ImportadorRuta importador = new ImportadorRuta(lector, rutaDAO, "0002", jdbc);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> importador.run(null));
 
         assertTrue(e.getMessage().contains("0002 (La parada X viene sin ubicación)"), e.getMessage());
