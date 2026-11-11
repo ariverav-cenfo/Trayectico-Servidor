@@ -12,9 +12,9 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
     v_velocidad_bus_kmh CONSTANT DOUBLE PRECISION := 20;
-        v_velocidad_caminando_kmh CONSTANT DOUBLE PRECISION := 4;
-        v_radio_caminata_m CONSTANT DOUBLE PRECISION := 300;
-        v_penalizacion_abordaje_min CONSTANT DOUBLE PRECISION := 5;
+    v_velocidad_caminando_kmh CONSTANT DOUBLE PRECISION := 4;
+    v_radio_caminata_m CONSTANT DOUBLE PRECISION := 300;
+    v_penalizacion_abordaje_min CONSTANT DOUBLE PRECISION := 5;
 BEGIN
 
     -- 1. Limpiar el grafo anterior.
@@ -161,6 +161,50 @@ BEGIN
                AND o.total > 1
                AND (ST_IsClosed(r.geometria) OR o.parada_id = primero.parada_id)
          ),
+         fracciones_base AS (
+             SELECT
+                 pr.recorrido_id,
+                 pr.orden_parada,
+                 ST_LineLocatePoint(
+                         r.geometria,
+                         p.geometria
+                 ) AS fraccion,
+                 r.geometria AS geometria_recorrido,
+                 ROW_NUMBER() OVER (
+                    PARTITION BY pr.recorrido_id
+                    ORDER BY pr.orden_parada DESC
+                ) AS posicion_inversa
+             FROM paradas_recorridos pr
+                      JOIN recorridos r
+                           ON r.id = pr.recorrido_id
+                      JOIN paradas p
+                           ON p.id = pr.parada_id
+             WHERE r.activo = TRUE
+               AND r.geometria IS NOT NULL
+               AND p.geometria IS NOT NULL
+         ),
+         fracciones_con_anterior AS (
+             SELECT
+                 *,
+                 LAG(fraccion) OVER (
+                    PARTITION BY recorrido_id
+                    ORDER BY orden_parada
+                ) AS fraccion_anterior
+             FROM fracciones_base
+         ),
+         fracciones_ajustadas AS (
+             SELECT
+                 recorrido_id,
+                 orden_parada,
+                 CASE
+                     WHEN ST_IsClosed(geometria_recorrido)
+                         AND posicion_inversa = 1
+                         AND fraccion < fraccion_anterior
+                         THEN 1.0
+                     ELSE fraccion
+                     END AS fraccion
+             FROM fracciones_con_anterior
+         ),
          distancias AS (
              SELECT
                  par.recorrido_id,
@@ -170,14 +214,8 @@ BEGIN
                  vd.parada_id AS parada_destino_id,
                  par.es_circular,
                  r.geometria AS geometria_recorrido,
-                 ST_LineLocatePoint(
-                         r.geometria,
-                         po.geometria
-                 ) AS fraccion_origen,
-                 ST_LineLocatePoint(
-                         r.geometria,
-                         pd.geometria
-                 ) AS fraccion_destino
+                 fo.fraccion AS fraccion_origen,
+                 fd.fraccion AS fraccion_destino
              FROM pares par
                       JOIN recorridos r
                            ON r.id = par.recorrido_id
@@ -189,13 +227,13 @@ BEGIN
                            ON vd.tipo = 'en_bus'
                                AND vd.recorrido_id = par.recorrido_id
                                AND vd.orden_parada = par.orden_destino
-                      JOIN paradas po
-                           ON po.id = par.origen_id
-                      JOIN paradas pd
-                           ON pd.id = par.destino_id
+                      JOIN fracciones_ajustadas fo
+                           ON fo.recorrido_id = par.recorrido_id
+                               AND fo.orden_parada = par.orden_origen
+                      JOIN fracciones_ajustadas fd
+                           ON fd.recorrido_id = par.recorrido_id
+                               AND fd.orden_parada = par.orden_destino
              WHERE r.geometria IS NOT NULL
-               AND po.geometria IS NOT NULL
-               AND pd.geometria IS NOT NULL
          )
     INSERT INTO aristas (
             source,

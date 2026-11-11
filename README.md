@@ -448,11 +448,7 @@ El resultado debe contener ambas tablas.
 
 ### 12.3. Verificación de la construcción del grafo
 
-Después de importar los datos correspondientes al recorrido `0002-A-1` (sección 11), ejecutar la función de construcción del grafo definida en V7:
-
-```sql
-SELECT construir_grafo();
-```
+Después de importar los datos correspondientes al recorrido 0002-A-1 (sección 11), el importador ejecuta automáticamente construir_grafo(), siempre que todas las rutas se hayan importado correctamente.
 
 Registrar los siguientes conteos:
 
@@ -462,7 +458,11 @@ SELECT
     (SELECT COUNT(*) FROM aristas) AS total_aristas;
 ```
 
-Ejecutar nuevamente la función `construir_grafo()` y repetir la consulta anterior.
+Para comprobar que la reconstrucción no genera registros duplicados, ejecutar manualmente nuevamente la función: `construir_grafo()` y repetir la consulta anterior.
+
+```sql
+SELECT construir_grafo();
+```
 
 Los conteos de ambas ejecuciones deben ser iguales. La segunda ejecución no debe generar registros duplicados.
 
