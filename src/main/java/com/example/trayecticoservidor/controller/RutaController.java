@@ -19,7 +19,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/rutas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:4200")
 public class RutaController {
 
     private final CatalogoRutasService catalogoRutasService;
