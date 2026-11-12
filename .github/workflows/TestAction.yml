@@ -16,7 +16,20 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: TrayecticoDB
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd="pg_isready -U test -d TrayecticoDB"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - uses: actions/checkout@v4
@@ -31,24 +44,14 @@ jobs:
       - name: Make Maven wrapper executable
         run: chmod +x mvnw
 
-      - name: Instalar CTP Cliente 
+      - name: Install CTP client
         run: ./mvnw install -DskipTests -f libs/ctp-cliente/pom.xml
 
-      - name: Compilar main project
+      - name: Compile
         run: ./mvnw compile
 
-      - name: Correr tests 
+      - name: Run tests
         run: ./mvnw -B verify
         env:
           DB_USER: test
           DB_PASSWORD: test
-
-      - name: Upload tests y reportes de coverage 
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: reports
-          path: |
-            target/surefire-reports/
-            target/site/jacoco/
-          if-no-files-found: ignore
