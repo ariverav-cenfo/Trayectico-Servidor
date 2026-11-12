@@ -18,6 +18,7 @@ target/
 *.iws
 *.iml
 *.ipr
+*.log
 
 ### NetBeans ###
 /nbproject/private/
@@ -41,3 +42,5 @@ build/
 docker/.env
 .env.*
 !.env.example
+
+/q

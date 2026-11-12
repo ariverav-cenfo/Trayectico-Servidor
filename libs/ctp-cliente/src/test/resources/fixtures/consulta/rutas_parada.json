@@ -1,0 +1,12 @@
+{
+ "success": true,
+ "data": [
+  {
+   "codigo_ruta": "0002",
+   "nombre_ruta": "SAN JOSÉ - SABANA - CEMENTERIO",
+   "parada": "PBA-10104-054",
+   "geometriatextual": "MULTILINESTRING((491651.549989586 1098308.28539996,491743.1906 1098295.7444,491776.435424066 1098291.28635304,491889.465447869 1098276.12965731))"
+  }
+ ],
+ "tipo": "textual"
+}

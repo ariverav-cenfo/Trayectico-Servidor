@@ -1,0 +1,156 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<module name="Checker">
+  <property name="charset" value="UTF-8"/>
+  <property name="severity" value="error"/>
+  <property name="fileExtensions" value="java, properties, xml"/>
+
+  <module name="SuppressionFilter">
+    <property name="file" value="${config_loc}/checkstyle-suppressions.xml"/>
+  </module>
+
+  <module name="NewlineAtEndOfFile">
+    <property name="lineSeparator" value="lf_cr_crlf"/>
+  </module>
+  <module name="FileLength">
+    <property name="max" value="600"/>
+  </module>
+  <module name="LineLength">
+    <property name="max" value="130"/>
+    <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://"/>
+  </module>
+  <module name="FileTabCharacter"/>
+  <module name="RegexpSingleline">
+    <property name="format" value="\s+$"/>
+    <property name="message" value="Espacios al final de la linea."/>
+  </module>
+
+  <module name="TreeWalker">
+    <module name="OuterTypeFilename"/>
+    <module name="ConstantName"/>
+    <module name="LocalFinalVariableName"/>
+    <module name="LocalVariableName"/>
+    <module name="MemberName"/>
+    <module name="MethodName"/>
+    <module name="PackageName">
+      <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+    </module>
+    <module name="ParameterName"/>
+    <module name="LambdaParameterName"/>
+    <module name="StaticVariableName"/>
+    <module name="TypeName"/>
+    <module name="RecordComponentName"/>
+    <module name="ClassTypeParameterName">
+      <property name="format" value="^[A-Z]$"/>
+    </module>
+    <module name="MethodTypeParameterName">
+      <property name="format" value="^[A-Z]$"/>
+    </module>
+
+    <module name="AvoidStarImport"/>
+    <module name="IllegalImport"/>
+    <module name="RedundantImport"/>
+    <module name="UnusedImports"/>
+
+    <module name="MethodLength">
+      <property name="max" value="80"/>
+    </module>
+    <module name="ParameterNumber">
+      <property name="max" value="8"/>
+      <property name="ignoreOverriddenMethods" value="true"/>
+    </module>
+    <module name="CyclomaticComplexity">
+      <property name="max" value="12"/>
+    </module>
+    <module name="NestedIfDepth">
+      <property name="max" value="2"/>
+    </module>
+
+    <module name="GenericWhitespace"/>
+    <module name="MethodParamPad"/>
+    <module name="NoWhitespaceAfter"/>
+    <module name="NoWhitespaceBefore"/>
+    <module name="ParenPad"/>
+    <module name="TypecastParenPad"/>
+    <module name="WhitespaceAfter"/>
+    <module name="WhitespaceAround">
+      <property name="allowEmptyConstructors" value="true"/>
+      <property name="allowEmptyLambdas" value="true"/>
+      <property name="allowEmptyMethods" value="true"/>
+      <property name="allowEmptyTypes" value="true"/>
+      <property name="allowEmptyLoops" value="true"/>
+    </module>
+    <module name="OperatorWrap"/>
+    <module name="SeparatorWrap">
+      <property name="tokens" value="DOT"/>
+      <property name="option" value="nl"/>
+    </module>
+    <module name="SeparatorWrap">
+      <property name="tokens" value="COMMA"/>
+      <property name="option" value="eol"/>
+    </module>
+    <module name="Indentation">
+      <property name="basicOffset" value="4"/>
+      <property name="caseIndent" value="4"/>
+      <property name="lineWrappingIndentation" value="8"/>
+      <property name="forceStrictCondition" value="false"/>
+    </module>
+
+    <module name="ModifierOrder"/>
+    <module name="RedundantModifier"/>
+
+    <module name="AvoidNestedBlocks">
+      <property name="allowInSwitchCase" value="true"/>
+    </module>
+    <module name="EmptyBlock">
+      <property name="option" value="text"/>
+    </module>
+    <module name="EmptyCatchBlock"/>
+    <module name="LeftCurly"/>
+    <module name="NeedBraces"/>
+    <module name="RightCurly"/>
+
+    <module name="EmptyStatement"/>
+    <module name="EqualsHashCode"/>
+    <module name="FallThrough"/>
+    <module name="IllegalInstantiation"/>
+    <module name="InnerAssignment"/>
+    <module name="MissingSwitchDefault"/>
+    <module name="MultipleVariableDeclarations"/>
+    <module name="OneStatementPerLine"/>
+    <module name="SimplifyBooleanExpression"/>
+    <module name="SimplifyBooleanReturn"/>
+    <module name="StringLiteralEquality"/>
+    <module name="DefaultComesLast"/>
+    <module name="DeclarationOrder"/>
+    <module name="ModifiedControlVariable"/>
+    <module name="UnnecessarySemicolonInEnumeration"/>
+    <module name="UnnecessarySemicolonAfterTypeMemberDeclaration"/>
+    <module name="UnusedLocalVariable"/>
+
+    <module name="FinalClass"/>
+    <module name="HideUtilityClassConstructor"/>
+    <module name="InterfaceIsType"/>
+    <module name="VisibilityModifier"/>
+    <module name="OneTopLevelClass"/>
+    <module name="MutableException"/>
+
+    <module name="ArrayTypeStyle"/>
+    <module name="UpperEll"/>
+    <module name="TodoComment">
+      <property name="format" value="(TODO)|(FIXME)|(XXX)"/>
+    </module>
+    <module name="AvoidEscapedUnicodeCharacters">
+      <property name="allowEscapesForControlCharacters" value="true"/>
+    </module>
+
+    <module name="InvalidJavadocPosition"/>
+    <module name="MissingJavadocType">
+      <property name="scope" value="public"/>
+    </module>
+    <module name="NonEmptyAtclauseDescription"/>
+    <module name="AtclauseOrder"/>
+  </module>
+</module>

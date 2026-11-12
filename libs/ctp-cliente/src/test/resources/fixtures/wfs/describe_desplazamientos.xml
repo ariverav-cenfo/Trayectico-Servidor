@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:CTP_PUBLICO="CTP_PUBLICO" xmlns:gml="http://www.opengis.net/gml" elementFormDefault="qualified" targetNamespace="CTP_PUBLICO">
+  <xsd:import namespace="http://www.opengis.net/gml" schemaLocation="http://ctpgeos1:11080/geoserver/schemas/gml/3.1.1/base/gml.xsd"/>
+  <xsd:complexType name="desplazamientosType">
+    <xsd:complexContent>
+      <xsd:extension base="gml:AbstractFeatureType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="id" nillable="false" type="xsd:int"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="identificador_desplazamiento" nillable="true" type="xsd:string"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="descripcion" nillable="true" type="xsd:string"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="estado" nillable="true" type="xsd:string"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="sentido" nillable="true" type="xsd:string"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="geometria_crtm05" nillable="true" type="gml:GeometryPropertyType"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="longitud" nillable="true" type="xsd:int"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="porcentaje_lastre" nillable="true" type="xsd:double"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="porcentaje_pavimento" nillable="true" type="xsd:double"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="tipo_desplazamiento" nillable="true" type="xsd:string"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="pendiente_ponderada" nillable="true" type="xsd:double"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="pendiente_maxima" nillable="true" type="xsd:double"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="tipo_servicio" nillable="true" type="xsd:string"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="radio_minimo_curvas_horizontales" nillable="true" type="xsd:double"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:element name="desplazamientos" substitutionGroup="gml:_Feature" type="CTP_PUBLICO:desplazamientosType"/>
+</xsd:schema>

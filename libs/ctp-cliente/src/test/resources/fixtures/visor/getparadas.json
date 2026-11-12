@@ -1,0 +1,25 @@
+{
+ "result": true,
+ "data": [
+  {
+   "id": 7310,
+   "nombre": "1000 METROS DE LA ZONA DE PROTECCIÓN DEL ICE HACIA SAN RAMÓN",
+   "geometria": "POINT(448360.048378179 1109435.7141091)"
+  },
+  {
+   "id": 10215,
+   "nombre": "1000 METROS NORTE DE LA IGLESIA DE CIRRÍ",
+   "geometria": "POINT(459840.919741631 1119846.74173528)"
+  },
+  {
+   "id": 12488,
+   "nombre": "1000 METROS SURESTE DE ENTRADA A BOLÍVAR CENTRO",
+   "geometria": "POINT(447290.850661183 1117016.15191745)"
+  },
+  {
+   "id": 12018,
+   "nombre": "100 AL OESTE DE IGLESIA CALLE VÍQUEZ",
+   "geometria": "POINT(482517.008797585 1105568.30438114)"
+  }
+ ]
+}
