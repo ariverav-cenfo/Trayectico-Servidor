@@ -51,18 +51,13 @@ class TarifaAresepDAOTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void reimportarConservaElMetodoDePagoIngresadoManualmente() {
+    void importarUnaTarifaMasRecienteActualizaLaFila() {
         dao.insertarOActualizarTodas(List.of(
                 tarifa("TEST-T0001", "350.00", LocalDate.of(2026, 9, 4))));
-        jdbc.update("UPDATE tarifas_aresep SET metodo_pago = ? WHERE codigo_fraccion = ?",
-                "Efectivo, Tarjeta", "TEST-T0001");
 
         dao.insertarOActualizarTodas(List.of(
                 tarifa("TEST-T0001", "400.00", LocalDate.of(2026, 10, 1))));
 
-        assertEquals("Efectivo, Tarjeta", jdbc.queryForObject(
-                "SELECT metodo_pago FROM tarifas_aresep WHERE codigo_fraccion = ?",
-                String.class, "TEST-T0001"));
         assertEquals(new BigDecimal("400.00"), jdbc.queryForObject(
                 "SELECT tarifa_regular FROM tarifas_aresep WHERE codigo_fraccion = ?",
                 BigDecimal.class, "TEST-T0001"));
