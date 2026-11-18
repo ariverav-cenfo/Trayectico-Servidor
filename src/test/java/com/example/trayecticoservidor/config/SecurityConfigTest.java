@@ -1,21 +1,23 @@
 package com.example.trayecticoservidor.config;
 
+import com.example.trayecticoservidor.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
-import com.example.trayecticoservidor.AbstractIntegrationTest;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
 @AutoConfigureMockMvc
-class SecurityConfigTest extends AbstractIntegrationTest{
+class SecurityConfigTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -30,9 +32,26 @@ class SecurityConfigTest extends AbstractIntegrationTest{
     }
 
     @Test
-    void endpointProtegidoPost_sinLogin_retorna403() throws Exception {
+    void endpointProtegidoPost_sinLogin_retorna401() throws Exception {
         mockMvc.perform(post("/rutas"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void usuarioActual_sinToken_retorna401() throws Exception {
+        mockMvc.perform(get("/usuarios/yo"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void usuarioActual_conTokenAdmin_retornaCorreoYRol() throws Exception {
+        mockMvc.perform(get("/usuarios/yo")
+                        .with(jwt()
+                                .jwt(token -> token.claim("email", "admin@ejemplo.com"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.correo").value("admin@ejemplo.com"))
+                .andExpect(jsonPath("$.rol").value("ADMIN"));
     }
 
     @Test

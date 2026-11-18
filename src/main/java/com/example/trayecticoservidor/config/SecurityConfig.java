@@ -18,7 +18,8 @@ import java.util.List;
 
 /**
  * Configuración central de seguridad y políticas CORS de la aplicación.
- * Define una arquitectura stateless con endpoints públicos de solo lectura.
+ * Define una arquitectura stateless con endpoints públicos de solo lectura
+ * y valida el id_token de Google en los endpoints protegidos.
  */
 @Configuration
 @EnableWebSecurity
@@ -29,14 +30,16 @@ public class SecurityConfig {
 
     /**
      * Configura la cadena de filtros de seguridad HTTP, deshabilitando CSRF,
-     * estableciendo sesiones sin estado y restringiendo el acceso a los endpoints.
+     * estableciendo sesiones sin estado, restringiendo el acceso a los endpoints
+     * y validando el token de Google como resource server.
      *
      * @param http instancia de {@link HttpSecurity} a configurar
+     * @param rolJwtConverter asigna el rol según el correo del token
      * @return la cadena de filtros construida
      * @throws Exception si ocurre un error durante la configuración de seguridad
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, RolJwtConverter rolJwtConverter) throws Exception {
         http
                 // Aplica la configuración definida en el bean CorsConfigurationSource
                 .cors(Customizer.withDefaults())
@@ -47,7 +50,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/rutas/**", "/avisos/**", "/viajes/**", "/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/rutas/buscar").permitAll()
                         .anyRequest().authenticated()
-                );
+                )
+                // Valida el id_token de Google que llega en la cabecera Authorization: Bearer
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(rolJwtConverter)));
         return http.build();
     }
 
