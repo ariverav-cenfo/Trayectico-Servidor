@@ -12,10 +12,22 @@ import java.util.List;
  *@param codigoRamal El identificador único del ramal.
  *@param nombreRamal El nombre o descripción del ramal.
  *@param recorridos Colección de recorridos asociados a este ramal.
+ *@param tarifa Tarifa del ramal según ARESEP, o {@code null} si no hay tarifa disponible.
  */
 public record RamalResumenDTO(
         String codigoRamal,
         String nombreRamal,
+        TarifaRamalDTO tarifa,
         List<RecorridoResumenDTO> recorridos
 ) {
+
+    /**
+     * Devuelve una copia de este ramal con la tarifa indicada.
+     *
+     * @param tarifa Tarifa del ramal, o {@code null} si no hay tarifa disponible.
+     * @return un ramal igual a este, con la tarifa.
+     */
+    public RamalResumenDTO conTarifa(TarifaRamalDTO tarifa) {
+        return new RamalResumenDTO(codigoRamal, nombreRamal, tarifa, recorridos);
+    }
 }
