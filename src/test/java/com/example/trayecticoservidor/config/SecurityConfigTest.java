@@ -64,6 +64,16 @@ class SecurityConfigTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void corsPreflight_headerNgrok_esPermitido() throws Exception {
+        mockMvc.perform(options("/rutas")
+                        .header(HttpHeaders.ORIGIN, "http://localhost:4200")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "ngrok-skip-browser-warning"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "ngrok-skip-browser-warning"));
+    }
+
+    @Test
     void corsPreflight_origenNoPermitido_esRechazado() throws Exception {
         mockMvc.perform(options("/rutas")
                         .header(HttpHeaders.ORIGIN, "http://origen-malicioso.com")
