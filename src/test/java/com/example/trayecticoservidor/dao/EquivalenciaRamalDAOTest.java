@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -29,8 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Transactional
 class EquivalenciaRamalDAOTest extends AbstractIntegrationTest {
 
+    /** Id del CTP del ramal que se crea antes de cada prueba. */
     private static final int ID_RAMAL_PRUEBA = 900001;
+
+    /** Id del CTP de un ramal que no existe en {@code ramales}. */
     private static final int ID_RAMAL_INEXISTENTE = 900099;
+
+    /** Código del CTP de la ruta de prueba. */
+    private static final String CODIGO_RUTA_PRUEBA = "TEST-9001";
 
     @Autowired
     private EquivalenciaRamalDAO dao;
@@ -41,16 +48,19 @@ class EquivalenciaRamalDAOTest extends AbstractIntegrationTest {
     @Autowired
     private JdbcTemplate jdbc;
 
+    /**
+     * Crea la ruta {@code TEST-9001} con un ramal {@code TEST-9001-A}, porque
+     * {@code equivalencias_ramales} exige que el ramal del CTP exista.
+     */
     @BeforeEach
     void crearRamalDePrueba() {
         jdbc.update("INSERT INTO rutas (codigo_ctp, id_ctp, nombre) VALUES (?, ?, ?)",
-                "TEST-9001", 900001, "Ruta de prueba");
-        Long rutaId = jdbc.queryForObject(
-                "SELECT id FROM rutas WHERE codigo_ctp = ?", Long.class, "TEST-9001");
+                CODIGO_RUTA_PRUEBA, 900001, "Ruta de prueba");
         jdbc.update("INSERT INTO ramales (ruta_id, codigo_ctp, id_ctp, descripcion) VALUES (?, ?, ?, ?)",
-                rutaId, "TEST-9001-A", ID_RAMAL_PRUEBA, "Ramal de prueba");
+                idRutaPrueba(), "TEST-9001-A", ID_RAMAL_PRUEBA, "Ramal de prueba");
     }
 
+    /** Cargar dos veces las mismas equivalencias actualiza la fila en vez de duplicarla. */
     @Test
     void cargarLasMismasEquivalenciasDosVecesNoAgregaFilas() {
         long cantidadInicial = dao.contar();
@@ -63,6 +73,7 @@ class EquivalenciaRamalDAOTest extends AbstractIntegrationTest {
         assertEquals(cantidadInicial + 1, dao.contar());
     }
 
+    /** Una equivalencia nueva queda con el pago electrónico sin verificar ({@code NULL}). */
     @Test
     void unaEquivalenciaNuevaQuedaConElPagoElectronicoSinVerificar() {
         dao.insertarOActualizarTodas(List.of(equivalencia(ID_RAMAL_PRUEBA, 1.0)));
@@ -72,6 +83,7 @@ class EquivalenciaRamalDAOTest extends AbstractIntegrationTest {
                 Boolean.class, ID_RAMAL_PRUEBA));
     }
 
+    /** Recargar actualiza los datos de ARESEP, pero conserva el pago electrónico llenado a mano. */
     @Test
     void recargarConservaElPagoElectronicoIngresadoManualmente() {
         dao.insertarOActualizarTodas(List.of(equivalencia(ID_RAMAL_PRUEBA, 0.90)));
@@ -88,21 +100,24 @@ class EquivalenciaRamalDAOTest extends AbstractIntegrationTest {
                 BigDecimal.class, ID_RAMAL_PRUEBA));
     }
 
+    /** La llave foránea impide guardar la equivalencia de un ramal que no está importado. */
     @Test
     void rechazaUnRamalQueNoEstaImportado() {
         assertThrows(DataIntegrityViolationException.class, () ->
                 dao.insertarOActualizarTodas(List.of(equivalencia(ID_RAMAL_INEXISTENTE, 1.0))));
     }
 
+    /** La tabla solo acepta tipos de coincidencia de ramal, no los de ruta como {@code EXACTA}. */
     @Test
     void rechazaUnTipoDeCoincidenciaDeRuta() {
-        EquivalenciaRamal deRuta = new EquivalenciaRamal("TEST-9001", ID_RAMAL_PRUEBA, "TEST-9001-A",
+        EquivalenciaRamal deRuta = new EquivalenciaRamal(CODIGO_RUTA_PRUEBA, ID_RAMAL_PRUEBA, "TEST-9001-A",
                 "Ramal de prueba", "99", "TEST-R9001", "RAMAL DE PRUEBA", TipoCoincidencia.EXACTA, 1.0);
 
         assertThrows(DataIntegrityViolationException.class, () ->
                 dao.insertarOActualizarTodas(List.of(deRuta)));
     }
 
+    /** Encuentra los ramales del CTP importados y los ramales de ARESEP que tienen tarifa. */
     @Test
     void buscaLosRamalesImportadosYLosQueTienenTarifa() {
         tarifaDao.insertarOActualizarTodas(List.of(tarifa("TEST-R9001", "TEST-T9001", "350.00")));
@@ -151,11 +166,60 @@ class EquivalenciaRamalDAOTest extends AbstractIntegrationTest {
         assertTrue(dao.buscarTarifaRamal(ID_RAMAL_PRUEBA).isEmpty());
     }
 
+    /**
+     * De una ruta solo aparecen los ramales con tarifa, con su código del CTP como llave
+     * (SCRUM-116). El ramal B se crea sin equivalencia, así que no debe aparecer.
+     */
+    @Test
+    void lasTarifasDeUnaRutaSoloTraenLosRamalesConTarifa() {
+        jdbc.update("INSERT INTO ramales (ruta_id, codigo_ctp, id_ctp, descripcion) VALUES (?, ?, ?, ?)",
+                idRutaPrueba(), "TEST-9001-B", 900002, "Ramal sin tarifa");
+        dao.insertarOActualizarTodas(List.of(equivalencia(ID_RAMAL_PRUEBA, 1.0)));
+        tarifaDao.insertarOActualizarTodas(List.of(tarifa("TEST-R9001", "TEST-T9001", "350.00")));
+
+        Map<String, TarifaRamal> tarifas = dao.buscarTarifasPorCodigoRuta(CODIGO_RUTA_PRUEBA);
+
+        assertEquals(1, tarifas.size());
+        assertEquals(new BigDecimal("350.00"), tarifas.get("TEST-9001-A").tarifaViajeCompleto());
+        assertTrue(tarifas.get("TEST-9001-A").esExacta());
+        assertFalse(tarifas.containsKey("TEST-9001-B"));
+    }
+
+    /** Una ruta que no existe no trae tarifas: el mapa queda vacío (SCRUM-116). */
+    @Test
+    void unaRutaQueNoExisteNoTraeTarifas() {
+        assertTrue(dao.buscarTarifasPorCodigoRuta("TEST-NO-EXISTE").isEmpty());
+    }
+
+    /**
+     * Id interno de la ruta de prueba.
+     *
+     * @return {@code rutas.id} de la ruta {@code TEST-9001}.
+     */
+    private Long idRutaPrueba() {
+        return jdbc.queryForObject("SELECT id FROM rutas WHERE codigo_ctp = ?", Long.class, CODIGO_RUTA_PRUEBA);
+    }
+
+    /**
+     * Equivalencia {@code NOMBRE_EXACTO} entre un ramal del CTP y el ramal {@code TEST-R9001} de ARESEP.
+     *
+     * @param idRamalCtp id del CTP del ramal.
+     * @param puntaje similitud entre los nombres, de 0 a 1.
+     * @return la equivalencia lista para guardarse.
+     */
     private static EquivalenciaRamal equivalencia(int idRamalCtp, double puntaje) {
-        return new EquivalenciaRamal("TEST-9001", idRamalCtp, "TEST-9001-A", "Ramal de prueba",
+        return new EquivalenciaRamal(CODIGO_RUTA_PRUEBA, idRamalCtp, "TEST-9001-A", "Ramal de prueba",
                 "99", "TEST-R9001", "RAMAL DE PRUEBA", TipoCoincidencia.NOMBRE_EXACTO, puntaje);
     }
 
+    /**
+     * Fraccionamiento de ARESEP de prueba.
+     *
+     * @param codigoRamal código del ramal de ARESEP.
+     * @param codigoFraccion código único del fraccionamiento.
+     * @param tarifaRegular tarifa regular en colones, como texto, p. ej. {@code "350.00"}.
+     * @return la tarifa lista para guardarse.
+     */
     private static TarifaAresep tarifa(String codigoRamal, String codigoFraccion, String tarifaRegular) {
         LocalDate vigencia = LocalDate.of(2026, 9, 4);
         return new TarifaAresep("99", "RUTA DE PRUEBA", codigoRamal, "RAMAL DE PRUEBA",
