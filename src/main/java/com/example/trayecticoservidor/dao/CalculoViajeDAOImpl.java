@@ -8,6 +8,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ *Proposito: Puente a la DB para crear la informacion de los viajes, contiene los queries necesarios para recolectar la informacion del viaje, rutas, paradas, coordenadas, etc
+ */
 @Repository
 public class CalculoViajeDAOImpl implements CalculoViajeDAO{
     private final JdbcTemplate jdbcTemplate;
@@ -52,7 +55,13 @@ public class CalculoViajeDAOImpl implements CalculoViajeDAO{
                     ST_Y(ST_Transform(pd.geometria, 4326)) AS parada_destino_lat,
                     ST_X(ST_Transform(pd.geometria, 4326)) AS parada_destino_lon,
                     r.codigo_ctp AS codigo_ruta,
-                    r.nombre AS nombre_ruta,
+                    COALESCE(r.nombre, (
+                                 SELECT b.descripcion
+                                 FROM ramales b
+                                 WHERE b.ruta_id = r.id
+                                 ORDER BY b.codigo_ctp
+                                 LIMIT 1
+                             )) AS nombre_ruta,
                     rm.codigo_ctp AS codigo_ramal,
                     rm.descripcion AS nombre_ramal,
                     d.codigo_ctp AS codigo_recorrido,

@@ -13,7 +13,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Service para el calculo de los viajes
+ * Proposito: Service para el calculo de los viajes, aqui se construyen los valores de los tramos, response y otros datos enviados al front con el calculo del viaje
+ * Contiene el metodo para calcular las distancias en metros entre dos puntos geograficos usando la formula de haversine, usando el radio aproximado de la tierra contra los puntos de latitud y longitud ingresados
  *
  */
 @Service
@@ -80,7 +81,7 @@ public class CalculoViajeServiceImpl implements CalculoViajeService{
 
                     ParaResponseDTO descenso = new ParaResponseDTO(
                             tramo.paradaDescensoCodigo(), tramo.paradaDescensoNombre(),
-                            tramo.paradaAbordajeLat(), tramo.paradaAbordajeLon()
+                            tramo.paradaDescensoLat(), tramo.paradaDescensoLon()
                     );
 
                     //Procesando GeoJSON geometry en bus

@@ -1,20 +1,20 @@
 package com.example.trayecticoservidor.controller;
 
 import com.example.trayecticoservidor.AbstractIntegrationTest;
-import com.example.trayecticoservidor.DBRealIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.context.jdbc.Sql;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-
+@Sql("/datos-prueba-viaje.sql")
 class CalculosViajeControllerTest extends AbstractIntegrationTest {
-/*
+
     @LocalServerPort
     private int port;
 
@@ -30,12 +30,12 @@ class CalculosViajeControllerTest extends AbstractIntegrationTest {
         String requestJson = """
             {
               "origen": {
-              "lon": -84.08406273262446,
-              "lat": 9.933756378756598
+              "lon": -84.1171346,
+              "lat": 9.9948083
               },
               "destino": {
-              "lon": -84.1062265310545,
-              "lat": 9.93303510873382
+              "lon": -84.0988118,
+              "lat": 9.9345032
               }
             }
             """;
@@ -121,5 +121,5 @@ class CalculosViajeControllerTest extends AbstractIntegrationTest {
                 .body("opciones[0].tramos[0].geometria.coordinates[0][0]", lessThan(0.0f))
                 .body("opciones[0].tramos[0].geometria.coordinates[0][1]", greaterThan(0.0f));
     }
-*/
+
 }

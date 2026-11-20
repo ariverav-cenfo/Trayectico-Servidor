@@ -1,5 +1,6 @@
 package com.example.trayecticoservidor.controller;
 
+import com.example.trayecticoservidor.config.WebConfig;
 import com.example.trayecticoservidor.dto.RutaResumenDTO;
 import com.example.trayecticoservidor.dto.RutaDetalleDTO;
 import com.example.trayecticoservidor.service.CatalogoRutasService;
@@ -17,10 +18,10 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/rutas")
+@RequestMapping("/api/rutas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:4200")
-public class RutaController {
+
+public class RutaController{
 
     private final CatalogoRutasService catalogoRutasService;
 

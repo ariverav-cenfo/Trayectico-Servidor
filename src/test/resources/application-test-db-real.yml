@@ -1,9 +1,0 @@
-spring:
-  datasource:
-    url: jdbc:postgresql://127.0.0.1:5433/TrayecticoDB
-    username:
-    password:
-    driver-class-name: org.postgresql.Driver
-
-  flyway:
-    enabled: false
