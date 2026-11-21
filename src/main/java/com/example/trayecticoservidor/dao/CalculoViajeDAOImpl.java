@@ -65,7 +65,11 @@ public class CalculoViajeDAOImpl implements CalculoViajeDAO{
                     rm.codigo_ctp AS codigo_ramal,
                     rm.descripcion AS nombre_ramal,
                     d.codigo_ctp AS codigo_recorrido,
-                    COALESCE(d.longitud_m, CAST(ST_Length(d.geometria) AS INTEGER)) AS distancia_bus,
+                    CAST(
+                        ABS(
+                        ST_LineLocatePoint(d.geometria, po.geometria) - ST_LineLocatePoint(d.geometria, pd.geometria)
+                        )* ST_Length(d.geometria) AS INTEGER
+                    ) AS distancia_bus,
                     ST_AsGeoJSON(ST_Transform(d.geometria, 4326)) AS geometria_geojson,
                     po.dist_caminata_origen,
                     pd.dist_caminata_destino
@@ -80,9 +84,13 @@ public class CalculoViajeDAOImpl implements CalculoViajeDAO{
                   AND (d.estado_ctp IS NULL OR LOWER(d.estado_ctp) = 'activo')
                   AND pd_orig.orden_parada < pd_dest.orden_parada
             )
-            SELECT * FROM recorridos_directos
+            SELECT * FROM (
+                SELECT DISTINCT ON (codigo_ruta,codigo_ramal) *
+                from recorridos_directos
+                ORDER BY codigo_ruta, codigo_ramal, (dist_caminata_origen + dist_caminata_destino)
+            )sub
             ORDER BY (dist_caminata_origen + dist_caminata_destino)
-            LIMIT 10;
+            LIMIT 5;
         """;
 
         return jdbcTemplate.query(sql, ps -> {

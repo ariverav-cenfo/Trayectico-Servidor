@@ -29,7 +29,8 @@ public class CalculoViajeServiceImpl implements CalculoViajeService{
 
     @Override
     public ViajeResponseDTO calcularViaje(ViajeRequestDTO request){
-        if (request == null || request.origen() ==null || request.destino() == null){
+        if (request == null || request.origen() ==null || request.destino() == null ||
+                request.origen().lat() == null || request.origen().lon() == null || request.destino().lat() == null || request.destino().lon() == null){
             throw new IllegalArgumentException("Las coordenadas de origen y destino son obligatorias.");
         }
         BigDecimal origLat = request.origen().lat();
@@ -139,7 +140,7 @@ public class CalculoViajeServiceImpl implements CalculoViajeService{
         try {
             return objectMapper.readValue(geoJsonStr, GeoJsonLineStringDTO.class);
         } catch (Exception e) {
-            return new GeoJsonLineStringDTO(Collections.emptyList());
+            throw new RuntimeException("Error procesando GeoJson", e);
         }
     }
     private int calcularDistanciaMetros(BigDecimal lat1, BigDecimal lon1, BigDecimal lat2, BigDecimal lon2){
