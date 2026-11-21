@@ -8,7 +8,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
 public abstract class AbstractIntegrationTest {
 //Esta clase es base para cualquier test que ocupe usar la BD
 //Genera un contenedor reusable por cada ejecucion de test en lugar de abrir containers por cada clase de prueba
