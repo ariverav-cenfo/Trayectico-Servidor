@@ -70,7 +70,22 @@ public class CalculoViajeDAOImpl implements CalculoViajeDAO{
                         ST_LineLocatePoint(d.geometria, po.geometria) - ST_LineLocatePoint(d.geometria, pd.geometria)
                         )* ST_Length(d.geometria) AS INTEGER
                     ) AS distancia_bus,
-                    ST_AsGeoJSON(ST_Transform(d.geometria, 4326)) AS geometria_geojson,
+                                        ST_AsGeoJSON(
+                                                    ST_Transform(
+                                                        ST_LineSubstring(
+                                                            d.geometria,
+                                                            LEAST(
+                                                                ST_LineLocatePoint(d.geometria, po.geometria),
+                                                                ST_LineLocatePoint(d.geometria, pd.geometria)
+                                                            ),
+                                                            GREATEST(
+                                                                ST_LineLocatePoint(d.geometria, po.geometria),
+                                                                ST_LineLocatePoint(d.geometria, pd.geometria)
+                                                            )
+                                                        ),
+                                                        4326
+                                                    )
+                                                ) AS geometria_geojson,
                     po.dist_caminata_origen,
                     pd.dist_caminata_destino
                 FROM paradas_origen po

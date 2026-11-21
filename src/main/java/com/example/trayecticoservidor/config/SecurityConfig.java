@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/rutas/**", "/avisos/**", "/viajes/**", "/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rutas/**", "/avisos/**", "/viajes/**", "/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/rutas/buscar").permitAll()
                         .anyRequest().authenticated()
                 )

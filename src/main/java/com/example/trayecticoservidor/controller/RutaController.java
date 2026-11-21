@@ -1,6 +1,5 @@
 package com.example.trayecticoservidor.controller;
 
-import com.example.trayecticoservidor.config.WebConfig;
 import com.example.trayecticoservidor.dto.RutaResumenDTO;
 import com.example.trayecticoservidor.dto.RutaDetalleDTO;
 import com.example.trayecticoservidor.service.CatalogoRutasService;

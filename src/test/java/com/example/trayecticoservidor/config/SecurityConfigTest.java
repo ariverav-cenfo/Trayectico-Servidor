@@ -24,7 +24,7 @@ class SecurityConfigTest extends AbstractIntegrationTest {
 
     @Test
     void endpointsPublicosGet_sinLogin_retornan200() throws Exception {
-        mockMvc.perform(get("/rutas"))
+        mockMvc.perform(get("/api/rutas"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/health"))
@@ -33,7 +33,7 @@ class SecurityConfigTest extends AbstractIntegrationTest {
 
     @Test
     void endpointProtegidoPost_sinLogin_retorna401() throws Exception {
-        mockMvc.perform(post("/rutas"))
+        mockMvc.perform(post("/api/rutas"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -56,7 +56,7 @@ class SecurityConfigTest extends AbstractIntegrationTest {
 
     @Test
     void corsPreflight_origenPermitido_retornaCabeceraAllowOrigin() throws Exception {
-        mockMvc.perform(options("/rutas")
+        mockMvc.perform(options("/api/rutas")
                         .header(HttpHeaders.ORIGIN, "http://localhost:4200")
                         .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"))
                 .andExpect(status().isOk())
@@ -65,7 +65,7 @@ class SecurityConfigTest extends AbstractIntegrationTest {
 
     @Test
     void corsPreflight_headerNgrok_esPermitido() throws Exception {
-        mockMvc.perform(options("/rutas")
+        mockMvc.perform(options("/api/rutas")
                         .header(HttpHeaders.ORIGIN, "http://localhost:4200")
                         .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
                         .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "ngrok-skip-browser-warning"))
@@ -75,7 +75,7 @@ class SecurityConfigTest extends AbstractIntegrationTest {
 
     @Test
     void corsPreflight_origenNoPermitido_esRechazado() throws Exception {
-        mockMvc.perform(options("/rutas")
+        mockMvc.perform(options("/api/rutas")
                         .header(HttpHeaders.ORIGIN, "http://origen-malicioso.com")
                         .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"))
                 .andExpect(status().isForbidden())

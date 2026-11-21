@@ -3,6 +3,8 @@ package com.example.trayecticoservidor.service;
 import com.example.trayecticoservidor.dao.CalculoViajeDAO;
 import com.example.trayecticoservidor.dto.*;
 import com.example.trayecticoservidor.model.TramoRutaInterno;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
@@ -19,6 +21,7 @@ import java.util.List;
  */
 @Service
 public class CalculoViajeServiceImpl implements CalculoViajeService{
+    private static final Logger log = LoggerFactory.getLogger(CalculoViajeServiceImpl.class);
     private final CalculoViajeDAO calculoViajeDAO;
     private final ObjectMapper objectMapper;
 
@@ -140,7 +143,8 @@ public class CalculoViajeServiceImpl implements CalculoViajeService{
         try {
             return objectMapper.readValue(geoJsonStr, GeoJsonLineStringDTO.class);
         } catch (Exception e) {
-            throw new RuntimeException("Error procesando GeoJson", e);
+            log.error("No se pudo leer el GeoJSON del tramo; se devuelve sin geometría", e);
+            return null;
         }
     }
     private int calcularDistanciaMetros(BigDecimal lat1, BigDecimal lon1, BigDecimal lat2, BigDecimal lon2){
