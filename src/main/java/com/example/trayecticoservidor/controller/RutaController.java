@@ -20,8 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/rutas")
 @RequiredArgsConstructor
-
-public class RutaController{
+public class RutaController {
 
     private final CatalogoRutasService catalogoRutasService;
 
