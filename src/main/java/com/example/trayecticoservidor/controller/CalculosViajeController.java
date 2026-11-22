@@ -1,6 +1,5 @@
 package com.example.trayecticoservidor.controller;
 
-import com.example.trayecticoservidor.config.WebConfig;
 import com.example.trayecticoservidor.dto.ViajeRequestDTO;
 import com.example.trayecticoservidor.dto.ViajeResponseDTO;
 import com.example.trayecticoservidor.service.CalculoViajeService;
