@@ -103,7 +103,8 @@ public class RutaLecturaDAO {
             } while (rs.next());
 
             List<RamalResumenDTO> ramales = ramalesMap.values().stream()
-                    .map(b -> new RamalResumenDTO(b.codigo, b.nombre, b.desplazamientos))
+                    // La tarifa la agrega CatalogoRutasServiceImpl; este DAO solo lee el catálogo del CTP.
+                    .map(b -> new RamalResumenDTO(b.codigo, b.nombre, null, b.desplazamientos))
                     .toList();
 
             return new RutaDetalleDTO(codigo, routeName, ramales);
