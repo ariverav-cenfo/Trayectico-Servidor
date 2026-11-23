@@ -94,7 +94,7 @@ public class RutaControllerTest {
      */
     @Test
     void debeIncluirLaTarifaDeCadaRamalONullSiNoTiene() throws Exception {
-        mockMvc.perform(get("/rutas/0002"))
+        mockMvc.perform(get("/api/rutas/0002"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ramales[0].codigo_ramal").value("0002-A"))
                 .andExpect(jsonPath("$.ramales[0].tarifa.monto_colones").value(240.0))
