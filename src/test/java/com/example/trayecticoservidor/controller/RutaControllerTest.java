@@ -61,7 +61,7 @@ public class RutaControllerTest {
      */
     @Test
     void debeRetornarListaDeRutas() throws Exception {
-        mockMvc.perform(get("/rutas"))
+        mockMvc.perform(get("/api/rutas"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nombre_ruta").value("SAN JOSÉ - SABANA CEMENTERIO"))
@@ -76,7 +76,7 @@ public class RutaControllerTest {
      */
     @Test
     void debeRetornarDetalleDeRuta0002() throws Exception {
-        mockMvc.perform(get("/rutas/0002"))
+        mockMvc.perform(get("/api/rutas/0002"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.codigo_ruta").value("0002"))
@@ -110,7 +110,7 @@ public class RutaControllerTest {
      */
     @Test
     void debeRetornar404SiRutaNoExiste() throws Exception {
-        mockMvc.perform(get("/rutas/9999"))
+        mockMvc.perform(get("/api/rutas/9999"))
                 .andDo(print())
                 .andExpect(status().isNotFound());
     }

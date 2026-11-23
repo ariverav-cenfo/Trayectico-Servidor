@@ -17,9 +17,8 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/rutas")
+@RequestMapping("/api/rutas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:4200")
 public class RutaController {
 
     private final CatalogoRutasService catalogoRutasService;
