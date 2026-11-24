@@ -32,14 +32,17 @@ public class SecurityConfig {
      * Configura la cadena de filtros de seguridad HTTP, deshabilitando CSRF,
      * estableciendo sesiones sin estado, restringiendo el acceso a los endpoints
      * y validando el token de Google como resource server.
+     * Las rutas bajo /api/admin solo las usa el rol ADMIN.
      *
      * @param http instancia de {@link HttpSecurity} a configurar
      * @param rolJwtConverter asigna el rol según el correo del token
+     * @param erroresSeguridad responde los 401 y 403 con un mensaje genérico
      * @return la cadena de filtros construida
      * @throws Exception si ocurre un error durante la configuración de seguridad
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, RolJwtConverter rolJwtConverter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, RolJwtConverter rolJwtConverter,
+                                                   ErroresSeguridadHandler erroresSeguridad) throws Exception {
         http
                 // Aplica la configuración definida en el bean CorsConfigurationSource
                 .cors(Customizer.withDefaults())
@@ -47,12 +50,20 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers("/api/admin/**").hasRole(RolJwtConverter.ROL_ADMIN)
                         .requestMatchers(HttpMethod.GET, "/api/rutas/**", "/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/rutas/buscar").permitAll()
                         .anyRequest().authenticated()
                 )
-                // Valida el id_token de Google que llega en la cabecera Authorization: Bearer
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(rolJwtConverter)));
+                // Peticiones sin token (401) o sin el rol requerido (403)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(erroresSeguridad)
+                        .accessDeniedHandler(erroresSeguridad))
+                // Valida el id_token de Google; los tokens inválidos o vencidos también dan 401 genérico
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(rolJwtConverter))
+                        .authenticationEntryPoint(erroresSeguridad)
+                        .accessDeniedHandler(erroresSeguridad));
         return http.build();
     }
 
