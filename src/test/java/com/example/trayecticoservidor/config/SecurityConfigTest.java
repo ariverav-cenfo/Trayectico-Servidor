@@ -39,13 +39,13 @@ class SecurityConfigTest extends AbstractIntegrationTest {
 
     @Test
     void usuarioActual_sinToken_retorna401() throws Exception {
-        mockMvc.perform(get("/usuarios/yo"))
+        mockMvc.perform(get("/api/usuarios/yo"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void usuarioActual_conTokenAdmin_retornaCorreoYRol() throws Exception {
-        mockMvc.perform(get("/usuarios/yo")
+        mockMvc.perform(get("/api/usuarios/yo")
                         .with(jwt()
                                 .jwt(token -> token.claim("email", "admin@ejemplo.com"))
                                 .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
