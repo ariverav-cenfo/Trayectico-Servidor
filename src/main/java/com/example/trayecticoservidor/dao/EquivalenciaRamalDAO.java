@@ -5,11 +5,15 @@ import com.example.trayecticoservidor.model.TarifaRamal;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 
 /**
  * DAO de la tabla {@code equivalencias_ramales}: guarda qué ramal de ARESEP corresponde
@@ -38,6 +42,22 @@ public class EquivalenciaRamalDAO {
         FROM equivalencias_ramales e
         JOIN tarifas_aresep t ON t.codigo_ramal = e.codigo_ramal_aresep
         WHERE e.id_ramal_ctp = ?
+        """;
+
+    /**
+     * Tarifa del viaje completo (la más alta) y cantidad de fraccionamientos de cada ramal de una
+     * ruta del CTP, en una sola consulta. Los ramales sin equivalencia o sin tarifas no aparecen.
+     */
+    private static final String TARIFAS_RUTA = """
+        SELECT b.codigo_ctp AS codigo_ramal,
+               MAX(t.tarifa_regular) AS tarifa_viaje_completo,
+               COUNT(t.id) AS fracciones
+        FROM rutas r
+        JOIN ramales b ON b.ruta_id = r.id
+        JOIN equivalencias_ramales e ON e.id_ramal_ctp = b.id_ctp
+        JOIN tarifas_aresep t ON t.codigo_ramal = e.codigo_ramal_aresep
+        WHERE r.codigo_ctp = ?
+        GROUP BY b.codigo_ctp
         """;
 
     private final JdbcTemplate jdbc;
@@ -97,13 +117,40 @@ public class EquivalenciaRamalDAO {
      */
     public Optional<TarifaRamal> buscarTarifaRamal(int idRamalCtp) {
         return jdbc.queryForObject(TARIFA_RAMAL, (rs, numeroFila) -> {
-            int fracciones = rs.getInt("fracciones");
             // Sin fracciones no hay tarifa: la fila trae MAX en NULL.
-            if (fracciones == 0) {
+            if (rs.getInt("fracciones") == 0) {
                 return Optional.<TarifaRamal>empty();
             }
-            return Optional.of(new TarifaRamal(rs.getBigDecimal("tarifa_viaje_completo"), fracciones));
+            return Optional.of(mapearTarifa(rs));
         }, idRamalCtp);
+    }
+
+
+    /**
+     * Busca en una sola consulta las tarifas de todos los ramales de una ruta del CTP.
+     *
+     * @param codigoRuta código del CTP de la ruta ({@code rutas.codigo_ctp}), p. ej. {@code 0002}.
+     * @return tarifa por código del CTP del ramal ({@code ramales.codigo_ctp}); los ramales sin
+     *         equivalencia o sin tarifas de ARESEP no aparecen. Si la ruta no existe, el mapa está vacío.
+     */
+    public Map<String, TarifaRamal> buscarTarifasPorCodigoRuta(String codigoRuta) {
+        Map<String, TarifaRamal> tarifas = new HashMap<>();
+        jdbc.query(TARIFAS_RUTA, rs -> {
+            tarifas.put(rs.getString("codigo_ramal"), mapearTarifa(rs));
+        }, codigoRuta);
+        return tarifas;
+    }
+
+    /**
+     * Arma la tarifa de un ramal con la fila actual de una consulta que trae las columnas
+     * {@code tarifa_viaje_completo} y {@code fracciones}.
+     *
+     * @param rs fila actual de la consulta.
+     * @return la tarifa del ramal.
+     * @throws SQLException si no se pueden leer las columnas.
+     */
+    private static TarifaRamal mapearTarifa(ResultSet rs) throws SQLException {
+        return new TarifaRamal(rs.getBigDecimal("tarifa_viaje_completo"), rs.getInt("fracciones"));
     }
 
     /**
