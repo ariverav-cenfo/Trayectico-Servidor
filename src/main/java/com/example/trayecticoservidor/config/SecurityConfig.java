@@ -51,7 +51,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/admin/**").hasRole(RolJwtConverter.ROL_ADMIN)
-                        .requestMatchers(HttpMethod.GET, "/api/rutas/**", "/api/avisos/**", "/api/viajes/**", "/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rutas/**", "/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/rutas/buscar").permitAll()
                         .anyRequest().authenticated()
                 )

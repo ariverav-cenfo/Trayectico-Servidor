@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Endpoints del usuario autenticado con Google.
  */
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/api/usuarios")
 public class UsuarioController {
 
     /**
