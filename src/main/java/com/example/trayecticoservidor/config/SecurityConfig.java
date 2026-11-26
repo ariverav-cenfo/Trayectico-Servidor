@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole(RolJwtConverter.ROL_ADMIN)
                         .requestMatchers(HttpMethod.GET, "/api/rutas/**", "/api/avisos/**", "/api/viajes/**", "/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/rutas/buscar").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/viajes/interpretar").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Peticiones sin token (401) o sin el rol requerido (403)
