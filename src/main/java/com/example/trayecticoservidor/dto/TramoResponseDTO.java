@@ -16,8 +16,8 @@ import java.math.BigDecimal;
  * @param codigoRecorrido
  * @param paradaAbordaje
  * @param paradaDescenso
- * @param tarifa
- * @param aceptaPagoElectronico
+ * @param tarifa Tarifa regular del ramal en colones; null si ARESEP no tiene tarifa para el ramal
+ * @param tarifaExacta true si el ramal tiene un solo fraccionamiento; si es false, la tarifa es la del viaje completo (la más alta)
  */
 public record TramoResponseDTO(
         @JsonProperty("tipo") String tipo,
@@ -32,13 +32,14 @@ public record TramoResponseDTO(
         @JsonProperty("parada_abordaje") ParaResponseDTO paradaAbordaje,
         @JsonProperty("parada_descenso") ParaResponseDTO paradaDescenso,
         @JsonProperty("tarifa")BigDecimal tarifa,
+        @JsonProperty("tarifa_exacta") Boolean tarifaExacta,
         @JsonProperty("acepta_pago_electronico") Boolean aceptaPagoElectronico
         ) {
     //Constructor para los tramos a pie
     public static TramoResponseDTO segmentoCaminata(Integer distanciaMetros, GeoJsonLineStringDTO geometria){
         return new TramoResponseDTO(
                 "caminata", distanciaMetros, geometria, null, null, null, null, null,
-                null, null,null,null
+                null, null,null,null,null
                 );
         //Los campos que no son relevantes para una caminata van null, caminar no requiere de pago electronico, etc.
     }

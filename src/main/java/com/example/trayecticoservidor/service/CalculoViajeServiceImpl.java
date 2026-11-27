@@ -103,7 +103,7 @@ public class CalculoViajeServiceImpl implements CalculoViajeService{
                             tramo.codigoRuta(), tramo.nombreRuta(),
                             tramo.codigoRamal(), tramo.nombreRamal(),
                             tramo.codigoRecorrido(), abordaje, descenso,
-                            tramo.tarifa(), tramo.aceptaPagoElectronico()
+                            tramo.tarifa(), tramo.tarifaExacta(), tramo.aceptaPagoElectronico()
                     );
                     tramosFinales.add(tramoBus);
 
