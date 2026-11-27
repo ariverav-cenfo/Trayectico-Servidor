@@ -2,7 +2,6 @@ package com.example.trayecticoservidor.service;
 
 import com.example.trayecticoservidor.dto.InterpretacionViajeResponseDTO;
 import com.example.trayecticoservidor.dto.LugarGeocodificadoDTO;
-import com.example.trayecticoservidor.tool.GeocodificacionTool;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -33,12 +32,8 @@ class InterpretacionViajeServiceTest {
 
         geocodificacionService = mock(GeocodificacionService.class);
 
-        GeocodificacionTool geocodificacionTool =
-                new GeocodificacionTool(geocodificacionService);
-
         interpretacionViajeService = new InterpretacionViajeService(
                 openAiChatModel,
-                geocodificacionTool,
                 geocodificacionService
         );
     }
@@ -231,5 +226,110 @@ class InterpretacionViajeServiceTest {
 
         verify(geocodificacionService, times(1))
                 .buscarLugar("Universidad CENFOTEC San Francisco de Heredia");
+    }
+
+
+    @Test
+    void extraerOrigenDestino_debeSolicitarAclaracionCuandoHayVariosResultados()
+            throws Exception {
+
+        String respuestaIA = """
+        {
+          "origen": "CENFOTEC",
+          "destino": "La Sabana",
+          "preguntaAclaracion": null
+        }
+        """;
+
+        ChatResponse respuestaModelo = new ChatResponse(
+                List.of(new Generation(new AssistantMessage(respuestaIA)))
+        );
+
+        when(openAiChatModel.call(any(Prompt.class)))
+                .thenReturn(respuestaModelo);
+
+        LugarGeocodificadoDTO opcion1 = new LugarGeocodificadoDTO(
+                "Universidad CENFOTEC", "Catedral, San José", 9.93, -84.08
+        );
+
+        LugarGeocodificadoDTO opcion2 = new LugarGeocodificadoDTO(
+                "Universidad CENFOTEC", "San Francisco, Heredia", 9.99, -84.12
+        );
+
+        LugarGeocodificadoDTO destino = new LugarGeocodificadoDTO(
+                "Parque Metropolitano La Sabana",
+                "Mata Redonda, San José",
+                9.9355564,
+                -84.1045042
+        );
+
+        when(geocodificacionService.buscarLugar("CENFOTEC"))
+                .thenReturn(List.of(opcion1, opcion2));
+
+        when(geocodificacionService.buscarLugar("La Sabana"))
+                .thenReturn(List.of(destino));
+
+        InterpretacionViajeResponseDTO resultado =
+                interpretacionViajeService.extraerOrigenDestino(
+                        "Quiero viajar de CENFOTEC a La Sabana"
+                );
+
+        assertNull(resultado.origen());
+        assertNotNull(resultado.destino());
+        assertNotNull(resultado.preguntaAclaracion());
+
+        assertTrue(resultado.preguntaAclaracion().contains("Catedral, San José"));
+        assertTrue(resultado.preguntaAclaracion().contains("San Francisco, Heredia"));
+
+        verify(geocodificacionService, times(1)).buscarLugar("CENFOTEC");
+        verify(geocodificacionService, times(1)).buscarLugar("La Sabana");
+    }
+
+
+    @Test
+    void extraerOrigenDestino_debeSolicitarAclaracionCuandoNoHayResultados()
+            throws Exception {
+
+        String respuestaIA = """
+        {
+          "origen": "Atlantis",
+          "destino": "La Sabana",
+          "preguntaAclaracion": null
+        }
+        """;
+
+        ChatResponse respuestaModelo = new ChatResponse(
+                List.of(new Generation(new AssistantMessage(respuestaIA)))
+        );
+
+        when(openAiChatModel.call(any(Prompt.class)))
+                .thenReturn(respuestaModelo);
+
+        LugarGeocodificadoDTO destino = new LugarGeocodificadoDTO(
+                "Parque Metropolitano La Sabana",
+                "Mata Redonda, San José",
+                9.9355564,
+                -84.1045042
+        );
+
+        when(geocodificacionService.buscarLugar("Atlantis"))
+                .thenReturn(List.of());
+
+        when(geocodificacionService.buscarLugar("La Sabana"))
+                .thenReturn(List.of(destino));
+
+        InterpretacionViajeResponseDTO resultado =
+                interpretacionViajeService.extraerOrigenDestino(
+                        "Quiero viajar de Atlantis a La Sabana"
+                );
+
+        assertNull(resultado.origen());
+        assertNotNull(resultado.destino());
+        assertNotNull(resultado.preguntaAclaracion());
+
+        assertTrue(resultado.preguntaAclaracion().contains("No se encontró el origen"));
+
+        verify(geocodificacionService, times(1)).buscarLugar("Atlantis");
+        verify(geocodificacionService, times(1)).buscarLugar("La Sabana");
     }
 }

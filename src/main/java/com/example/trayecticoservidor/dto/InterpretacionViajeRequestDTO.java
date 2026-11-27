@@ -6,6 +6,7 @@ package com.example.trayecticoservidor.dto;
  * @param mensaje Texto escrito por el usuario.
  */
 public record InterpretacionViajeRequestDTO(
-        String mensaje
-) {
-}
+        String mensaje,
+        PuntoViajeDTO origenSeleccionado,
+        PuntoViajeDTO destinoSeleccionado
+) {}

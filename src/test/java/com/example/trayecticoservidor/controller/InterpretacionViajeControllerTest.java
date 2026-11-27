@@ -2,6 +2,8 @@ package com.example.trayecticoservidor.controller;
 
 import com.example.trayecticoservidor.dto.InterpretacionViajeResponseDTO;
 import com.example.trayecticoservidor.dto.PuntoViajeDTO;
+import com.example.trayecticoservidor.exception.GeocodificacionException;
+import com.example.trayecticoservidor.exception.GroqException;
 import com.example.trayecticoservidor.service.InterpretacionViajeService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.MediaType;
+
+import java.util.List;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -42,6 +47,8 @@ class InterpretacionViajeControllerTest {
                                 9.9355564,
                                 -84.1045042
                         ),
+                        List.of(),
+                        List.of(),
                         null
                 );
 
@@ -68,5 +75,66 @@ class InterpretacionViajeControllerTest {
 
         verify(interpretacionViajeService, times(1))
                 .extraerOrigenDestino(mensaje);
+    }
+
+    @Test
+    void interpretar_debeRetornar502CuandoGroqFalla() throws Exception {
+        when(interpretacionViajeService.extraerOrigenDestino(
+                "Quiero viajar de CENFOTEC a La Sabana"
+        )).thenThrow(new GroqException(
+                "No fue posible comunicarse con el servicio de IA.",
+                new RuntimeException()
+        ));
+
+        mockMvc.perform(post("/api/viajes/interpretar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                                "mensaje": "Quiero viajar de CENFOTEC a La Sabana"
+                            }
+                            """))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.mensaje").value(
+                        org.hamcrest.Matchers.containsString("servicio de IA")
+                ));
+    }
+
+    @Test
+    void interpretar_debeRetornar502CuandoPhotonFalla() throws Exception {
+        when(interpretacionViajeService.extraerOrigenDestino(
+                "Quiero viajar de CENFOTEC a La Sabana"
+        )).thenThrow(new GeocodificacionException(
+                "No fue posible consultar el servicio de geocodificación.",
+                new RuntimeException()
+        ));
+
+        mockMvc.perform(post("/api/viajes/interpretar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                                "mensaje": "Quiero viajar de CENFOTEC a La Sabana"
+                            }
+                            """))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.mensaje").value(
+                        org.hamcrest.Matchers.containsString("servicio de geocodificación")
+                ));
+    }
+
+    @Test
+    void interpretar_debeRetornar400CuandoElMensajeEstaVacio() throws Exception {
+        mockMvc.perform(post("/api/viajes/interpretar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                                "mensaje": ""
+                            }
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensaje").value(
+                        "Debe proporcionar un mensaje o seleccionar origen y destino."
+                ));
+
+        verifyNoInteractions(interpretacionViajeService);
     }
 }

@@ -2,13 +2,11 @@ package com.example.trayecticoservidor.service;
 
 import com.example.trayecticoservidor.client.PhotonClient;
 import com.example.trayecticoservidor.dto.LugarGeocodificadoDTO;
+import com.example.trayecticoservidor.exception.GeocodificacionException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Servicio encargado de buscar y transformar lugares geográficos
@@ -49,7 +47,9 @@ public class GeocodificacionService {
             );
         }
 
-        String consulta = nombre.strip();
+        String consultaOriginal = nombre.strip();
+
+        String consulta = extraerNombreBase(consultaOriginal);
 
         if (consulta.length() < MIN_CARACTERES_BUSQUEDA) {
             throw new IllegalArgumentException(
@@ -57,7 +57,18 @@ public class GeocodificacionService {
             );
         }
 
-        JsonNode respuesta = photonClient.buscar(consulta);
+        JsonNode respuesta;
+
+        try {
+            respuesta = photonClient.buscar(consulta);
+        } catch (RuntimeException e) {
+            throw new GeocodificacionException(
+                    "No fue posible consultar el servicio de geocodificación. "
+                            + "Intente nuevamente más tarde.",
+                    e
+            );
+        }
+
         JsonNode features = respuesta.path("features");
 
         List<LugarGeocodificadoDTO> lugares = new ArrayList<>();
@@ -103,7 +114,10 @@ public class GeocodificacionService {
         }
 
         // Puede contener cero, uno o varios elementos.
-        return List.copyOf(lugares);
+        return List.copyOf(filtrarPorUbicacion(
+                lugares,
+                extraerUbicacion(consultaOriginal)
+        ));
     }
 
     /**
@@ -182,5 +196,49 @@ public class GeocodificacionService {
         if (valor != null) {
             partes.add(valor);
         }
+    }
+
+    private String extraerNombreBase(String consulta) {
+        int inicio = consulta.indexOf('(');
+
+        if (inicio < 0) {
+            return consulta;
+        }
+
+        return consulta.substring(0, inicio).strip();
+    }
+
+    private String extraerUbicacion(String consulta) {
+        int inicio = consulta.indexOf('(');
+        int fin = consulta.lastIndexOf(')');
+
+        if (inicio < 0 || fin <= inicio) {
+            return null;
+        }
+
+        String ubicacion = consulta.substring(inicio + 1, fin).strip();
+
+        return ubicacion.isEmpty() ? null : ubicacion;
+    }
+
+    private List<LugarGeocodificadoDTO> filtrarPorUbicacion(
+            List<LugarGeocodificadoDTO> lugares,
+            String ubicacion) {
+
+        if (ubicacion == null) {
+            return lugares;
+        }
+
+        String ubicacionNormalizada = ubicacion.toLowerCase(Locale.ROOT);
+
+        List<LugarGeocodificadoDTO> filtrados = lugares.stream()
+                .filter(lugar -> lugar.detalle() != null
+                        && lugar.detalle().toLowerCase(Locale.ROOT)
+                        .contains(ubicacionNormalizada))
+                .toList();
+
+        // Si no hay coincidencias con la ubicación indicada,
+        // conservamos los resultados originales para solicitar aclaración.
+        return filtrados.isEmpty() ? lugares : filtrados;
     }
 }

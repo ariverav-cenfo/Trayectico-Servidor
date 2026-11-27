@@ -2,6 +2,7 @@ package com.example.trayecticoservidor.controller;
 
 import com.example.trayecticoservidor.dto.InterpretacionViajeRequestDTO;
 import com.example.trayecticoservidor.dto.InterpretacionViajeResponseDTO;
+import com.example.trayecticoservidor.exception.GeocodificacionException;
 import com.example.trayecticoservidor.exception.GroqException;
 import com.example.trayecticoservidor.service.InterpretacionViajeService;
 import org.springframework.http.HttpStatus;
@@ -28,21 +29,58 @@ public class InterpretacionViajeController {
      * Recibe el texto del usuario para interpretar una solicitud de viaje.
      *
      * @param solicitud Solicitud que contiene el mensaje del usuario.
-     * @return Respuesta HTTP confirmando la recepción.
+     * @return Respuesta HTTP con el resultado de la interpretación.
      */
     @PostMapping("/interpretar")
     public ResponseEntity<?> interpretar(
-            @RequestBody InterpretacionViajeRequestDTO solicitud) {
+            @RequestBody(required = false) InterpretacionViajeRequestDTO solicitud) {
+
+        if (solicitud == null) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("mensaje", "La solicitud no puede estar vacía."));
+        }
 
         try {
-            InterpretacionViajeResponseDTO resultado =
-                    interpretacionViajeService.extraerOrigenDestino(
-                            solicitud.mensaje()
-                    );
+            InterpretacionViajeResponseDTO resultado;
+
+            boolean haySeleccion =
+                    solicitud.origenSeleccionado() != null
+                            || solicitud.destinoSeleccionado() != null;
+
+            if (haySeleccion) {
+                if (solicitud.origenSeleccionado() == null
+                        || solicitud.destinoSeleccionado() == null) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("mensaje",
+                                    "Debe seleccionar tanto el origen como el destino."));
+                }
+
+                resultado = interpretacionViajeService.confirmarSeleccion(
+                        solicitud.origenSeleccionado(),
+                        solicitud.destinoSeleccionado()
+                );
+
+            } else {
+                if (solicitud.mensaje() == null || solicitud.mensaje().isBlank()) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("mensaje",
+                                    "Debe proporcionar un mensaje o seleccionar origen y destino."));
+                }
+
+                resultado = interpretacionViajeService.extraerOrigenDestino(
+                        solicitud.mensaje()
+                );
+            }
 
             return ResponseEntity.ok(resultado);
 
         } catch (GroqException e) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .body(Map.of(
+                            "mensaje", e.getMessage()
+                    ));
+
+        } catch (GeocodificacionException e) {
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                     .body(Map.of(
                             "mensaje", e.getMessage()

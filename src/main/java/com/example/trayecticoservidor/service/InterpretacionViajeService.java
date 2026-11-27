@@ -5,7 +5,6 @@ import com.example.trayecticoservidor.dto.LugarGeocodificadoDTO;
 import com.example.trayecticoservidor.dto.OrigenDestinoExtraidoDTO;
 import com.example.trayecticoservidor.dto.PuntoViajeDTO;
 import com.example.trayecticoservidor.exception.GroqException;
-import com.example.trayecticoservidor.tool.GeocodificacionTool;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +20,6 @@ import java.util.List;
 public class InterpretacionViajeService {
 
     private final ChatClient chatClient;
-    private final GeocodificacionTool geocodificacionTool;
     private final GeocodificacionService geocodificacionService;
 
     /**
@@ -29,14 +27,10 @@ public class InterpretacionViajeService {
      * con filtrado de metadatos de razonamiento.
      *
      * @param openAiChatModel Modelo de chat de OpenAI compatible configurado para Groq.
-     * @param geocodificacionTool Herramienta para buscar y geocodificar lugares.
      */
     public InterpretacionViajeService(
             OpenAiChatModel openAiChatModel,
-            GeocodificacionTool geocodificacionTool,
             GeocodificacionService geocodificacionService) {
-
-        this.geocodificacionTool = geocodificacionTool;
         this.geocodificacionService = geocodificacionService;
 
         this.chatClient = ChatClient.builder(
@@ -55,31 +49,28 @@ public class InterpretacionViajeService {
                    explícita o claramente en su mensaje.
                 2. No inventes lugares ni completes información que
                    el usuario no haya proporcionado.
-                3. Debes utilizar la herramienta buscarLugar para consultar
-                   cada lugar y obtener sus coordenadas.
-                4. Si buscarLugar devuelve una lista vacía para un lugar,
-                   no lo consideres válido. Deja su campo correspondiente
-                   en null y explica en preguntaAclaracion que no se encontró.
-                5. Si buscarLugar devuelve varios resultados para un lugar,
-                   no selecciones uno arbitrariamente. Deja su campo
-                   correspondiente en null y utiliza preguntaAclaracion
-                   para solicitar al usuario que seleccione una opción.
-                   Incluye los nombres y detalles geográficos de las opciones.
-                6. Si buscarLugar devuelve exactamente un resultado,
-                   utiliza el nombre de ese resultado.
-                7. Nunca inventes ni estimes coordenadas.
-                8. Si falta el origen o el destino en el mensaje original,
+                3. Conserva cualquier información geográfica adicional que el usuario
+                   proporcione junto al nombre del lugar, como distrito, cantón,
+                   provincia, barrio o sede.
+                4. No descartes esa información al extraer el origen y el destino.
+                5. Si el usuario menciona un lugar acompañado de su ubicación
+                   entre paréntesis, incluye también esa ubicación en el campo
+                   correspondiente.
+                6. No tienes acceso a herramientas de geocodificación.
+                   Tu responsabilidad es identificar los nombres de los lugares
+                   mencionados por el usuario, no validar si existen.
+                7. No determines si un lugar es ambiguo o si tiene coincidencias.
+                   Esa validación será realizada posteriormente por el backend.
+                8. Si el usuario no menciona el origen o el destino,
                    deja el campo correspondiente en null.
-                9. No calcules rutas, distancias ni tiempos de viaje.
-                10. Devuelve únicamente los datos correspondientes
-                    a la estructura solicitada:
-                    origen, destino y preguntaAclaracion.
-                11. Si no se necesita una aclaración, devuelve null
+                9. Nunca inventes ni estimes coordenadas.
+                10. Si falta el origen o el destino en el mensaje original,
+                   deja el campo correspondiente en null.
+                11. No calcules rutas, distancias ni tiempos de viaje.
+                12. Si no se necesita una aclaración, devuelve null
                     en preguntaAclaracion.
-                12. Las coordenadas geográficas nunca deben ser inventadas,
+                13. Las coordenadas geográficas nunca deben ser inventadas,
                     estimadas, modificadas ni calculadas.
-                13. Las únicas coordenadas válidas son las devueltas
-                    directamente por la herramienta buscarLugar.
                 14. No calcules coordenadas a partir de direcciones,
                     nombres de lugares u otra información.
                 15. No incluyas coordenadas en la pregunta de aclaración.
@@ -100,6 +91,7 @@ public class InterpretacionViajeService {
      * @param mensaje Solicitud de viaje escrita por el usuario.
      * @return DTO con el origen y destino identificados.
      */
+
     public InterpretacionViajeResponseDTO extraerOrigenDestino(String mensaje) {
 
         if (mensaje == null || mensaje.isBlank()) {
@@ -113,7 +105,6 @@ public class InterpretacionViajeService {
         try {
             resultado = chatClient.prompt()
                     .user(mensaje)
-                    .tools(geocodificacionTool)
                     .call()
                     .entity(OrigenDestinoExtraidoDTO.class);
 
@@ -127,22 +118,16 @@ public class InterpretacionViajeService {
 
         if (resultado == null) {
             return new InterpretacionViajeResponseDTO(
-                    null, null,
-                    "No fue posible interpretar su solicitud. "
-                            + "¿Podría indicar el origen y el destino?"
+                    null,
+                    null,
+                    List.of(),
+                    List.of(),
+                    generarAclaracion(null)
             );
         }
 
         String origen = normalizarLugar(resultado.origen());
         String destino = normalizarLugar(resultado.destino());
-
-        // Si la IA ya detectó una ambigüedad, se conserva su aclaración.
-        if (resultado.preguntaAclaracion() != null
-                && !resultado.preguntaAclaracion().isBlank()) {
-            return new InterpretacionViajeResponseDTO(
-                    null, null, resultado.preguntaAclaracion()
-            );
-        }
 
         List<LugarGeocodificadoDTO> origenes = origen != null
                 ? geocodificacionService.buscarLugar(origen)
@@ -162,7 +147,13 @@ public class InterpretacionViajeService {
 
         String aclaracion = null;
 
-        if (puntoOrigen == null || puntoDestino == null) {
+        // Si falta información en la solicitud, se pregunta al usuario.
+        if (origen == null || destino == null) {
+            aclaracion = generarAclaracion(resultado);
+
+            // Si ambos lugares fueron proporcionados, pero no se identificaron
+            // de forma única, se explica el problema encontrado.
+        } else if (puntoOrigen == null || puntoDestino == null) {
             aclaracion = generarAclaracionResultados(
                     origen, destino, origenes, destinos
             );
@@ -171,6 +162,8 @@ public class InterpretacionViajeService {
         return new InterpretacionViajeResponseDTO(
                 puntoOrigen,
                 puntoDestino,
+                puntoOrigen == null ? origenes : List.of(),
+                puntoDestino == null ? destinos : List.of(),
                 aclaracion
         );
     }
@@ -273,5 +266,18 @@ public class InterpretacionViajeService {
         return "Para el " + tipo
                 + ", seleccione una de las siguientes opciones: "
                 + opciones + ".";
+    }
+
+    public InterpretacionViajeResponseDTO confirmarSeleccion(
+            PuntoViajeDTO origen,
+            PuntoViajeDTO destino) {
+
+        return new InterpretacionViajeResponseDTO(
+                origen,
+                destino,
+                List.of(),
+                List.of(),
+                null
+        );
     }
 }

@@ -2,6 +2,7 @@ package com.example.trayecticoservidor.service;
 
 import com.example.trayecticoservidor.client.PhotonClient;
 import com.example.trayecticoservidor.dto.LugarGeocodificadoDTO;
+import com.example.trayecticoservidor.exception.GeocodificacionException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -159,5 +160,22 @@ class GeocodificacionServiceTest {
 
         verify(photonClient, times(1))
                 .buscar("Atlantis");
+    }
+
+    @Test
+    void buscarLugar_debeLanzarExcepcionCuandoPhotonFalla() {
+        when(photonClient.buscar("CENFOTEC"))
+                .thenThrow(new RuntimeException("Error de conexión"));
+
+        GeocodificacionException excepcion = assertThrows(
+                GeocodificacionException.class,
+                () -> geocodificacionService.buscarLugar("CENFOTEC")
+        );
+
+        assertTrue(excepcion.getMessage().contains(
+                "No fue posible consultar el servicio de geocodificación"
+        ));
+
+        verify(photonClient, times(1)).buscar("CENFOTEC");
     }
 }
