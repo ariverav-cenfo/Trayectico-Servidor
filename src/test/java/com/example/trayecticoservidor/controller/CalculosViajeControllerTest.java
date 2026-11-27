@@ -13,6 +13,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 @Sql("/datos-prueba-viaje.sql")
+@Sql(scripts = "/limpiar-tarifas-viaje.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_CLASS)
 class CalculosViajeControllerTest extends AbstractIntegrationTest {
 
     @LocalServerPort
@@ -61,6 +62,55 @@ class CalculosViajeControllerTest extends AbstractIntegrationTest {
                 // Verificación del formato GeoJSON
                 .body("opciones[0].tramos[0].geometria.type", is("LineString"))
                 .body("opciones[0].tramos[0].geometria.coordinates", is(notNullValue()));
+    }
+
+    @Test
+    @DisplayName("POST /api/rutas/buscar - El tramo en bus trae la tarifa de ARESEP y el viaje su costo total (SCRUM-92)")
+    void testBuscarRecorridoConTarifa() {
+        String requestJson = """
+            {
+              "origen": { "lon": -84.1171346, "lat": 9.9948083 },
+              "destino": { "lon": -84.0988118, "lat": 9.9345032 }
+            }
+            """;
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(requestJson)
+                .when()
+                .post("/api/rutas/buscar")
+                .then()
+                .statusCode(200)
+                // tramos[0] es la caminata hasta la parada y tramos[1] el bus del ramal 9901-A
+                .body("opciones[0].tramos[0].tarifa", is(nullValue()))
+                .body("opciones[0].tramos[1].tipo", is("bus"))
+                .body("opciones[0].tramos[1].tarifa", is(355.0f))
+                .body("opciones[0].tramos[1].tarifa_exacta", is(true))
+                .body("opciones[0].tramos[1].acepta_pago_electronico", is(true))
+                .body("opciones[0].costo_total", is(355.0f));
+    }
+
+    @Test
+    @DisplayName("POST /api/rutas/buscar - Si el ramal no tiene tarifa, el tramo y el costo total van en null (SCRUM-92)")
+    void testBuscarRecorridoSinTarifa() {
+        String requestJson = """
+            {
+              "origen": { "lon": -84.08406359198368, "lat": 9.933761732019091 },
+              "destino": { "lon": -84.1062265310545, "lat": 9.93303510873382 }
+            }
+            """;
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(requestJson)
+                .when()
+                .post("/api/rutas/buscar")
+                .then()
+                .statusCode(200)
+                .body("opciones[0].tramos[1].tipo", is("bus"))
+                .body("opciones[0].tramos[1].tarifa", is(nullValue()))
+                .body("opciones[0].tramos[1].tarifa_exacta", is(nullValue()))
+                .body("opciones[0].costo_total", is(nullValue()));
     }
 
     @Test

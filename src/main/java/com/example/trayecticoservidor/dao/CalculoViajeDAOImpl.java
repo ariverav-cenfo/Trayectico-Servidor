@@ -85,14 +85,26 @@ public class CalculoViajeDAOImpl implements CalculoViajeDAO{
                                                         ),
                                                         4326
                                                     )
-                                                ) AS geometria_geojson,
-                    po.dist_caminata_origen,
-                    pd.dist_caminata_destino
-                FROM paradas_origen po
+                                                ) AS geometria_geojson,            
+                                                                                           po.dist_caminata_origen,
+                                                                                           pd.dist_caminata_destino,
+                                                                                           tf.tarifa_viaje_completo AS tarifa,
+                                                                                           tf.fracciones,
+                                                                                           eq.acepta_pago_electronico
+                                                                                       FROM paradas_origen po
                 JOIN paradas_recorridos pd_orig ON po.id = pd_orig.parada_id
                 JOIN recorridos d ON d.id = pd_orig.recorrido_id
                 JOIN ramales rm ON rm.id = d.ramal_id
                 JOIN rutas r ON r.id = rm.ruta_id
+                                -- Tarifa del ramal (SCRUM-92): misma regla que SCRUM-116, la más alta de sus fracciones.
+                                        -- LEFT JOIN para que el viaje salga aunque el ramal no tenga tarifa: queda en NULL.
+                                        LEFT JOIN equivalencias_ramales eq ON eq.id_ramal_ctp = rm.id_ctp
+                                        LEFT JOIN LATERAL (
+                                            SELECT MAX(t.tarifa_regular) AS tarifa_viaje_completo,
+                                                   COUNT(t.id) AS fracciones
+                                            FROM tarifas_aresep t
+                                            WHERE t.codigo_ramal = eq.codigo_ramal_aresep
+                                        ) tf ON TRUE
                 JOIN paradas_recorridos pd_dest ON d.id = pd_dest.recorrido_id AND pd_dest.parada_id IN (SELECT id FROM paradas_destino)
                 JOIN paradas_destino pd ON pd.id = pd_dest.parada_id
                 WHERE d.activo = TRUE
@@ -116,6 +128,9 @@ public class CalculoViajeDAOImpl implements CalculoViajeDAO{
             ps.setDouble(5, maxDistanciaCaminataMetros);
             ps.setDouble(6, maxDistanciaCaminataMetros);
         }, (rs, rowNum) -> {
+            // Sin equivalencia o sin fracciones en ARESEP, MAX devuelve NULL: el tramo queda sin tarifa.
+            BigDecimal tarifa = rs.getBigDecimal("tarifa");
+            Boolean tarifaExacta = tarifa == null ? null : rs.getInt("fracciones") == 1;
             List<TramoRutaInterno> tramos = new ArrayList<>();
             tramos.add(new TramoRutaInterno(
                     "bus",
@@ -134,8 +149,10 @@ public class CalculoViajeDAOImpl implements CalculoViajeDAO{
                     rs.getString("parada_destino_nombre"),
                     rs.getBigDecimal("parada_destino_lat"),
                     rs.getBigDecimal("parada_destino_lon"),
-                    null,
-                    null
+                    tarifa,
+                    tarifaExacta,
+                    // getObject y no getBoolean: getBoolean convierte NULL (no verificado) en false.
+                    rs.getObject("acepta_pago_electronico", Boolean.class)
             ));
             return tramos;
         });

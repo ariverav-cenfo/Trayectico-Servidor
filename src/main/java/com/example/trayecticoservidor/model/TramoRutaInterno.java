@@ -20,7 +20,8 @@ import java.math.BigDecimal;
  * @param paradaDescensoNombre
  * @param paradaDescensoLat
  * @param paradaDescensoLon
- * @param tarifa
+ * @param tarifa Tarifa regular del ramal según ARESEP; null si no hay tarifa
+ * @param tarifaExacta true si el ramal tiene un solo fraccionamiento; null si no hay tarifa
  * @param aceptaPagoElectronico
  */
 public record TramoRutaInterno(
@@ -41,6 +42,7 @@ public record TramoRutaInterno(
         BigDecimal paradaDescensoLat,
         BigDecimal paradaDescensoLon,
         BigDecimal tarifa,
+        Boolean tarifaExacta,
         Boolean aceptaPagoElectronico
 ) {
 }
