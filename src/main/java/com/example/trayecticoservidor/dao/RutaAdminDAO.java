@@ -53,7 +53,7 @@ public class RutaAdminDAO {
                         return new RutaAdminBuilder(
                                 id,
                                 rs.getString("ruta_codigo"),
-                                rs.getObject("ruta_id_ctp", Long.class),
+                                rs.getObject("ruta_id_ctp", Integer.class),
                                 rs.getString("ruta_nombre")
                         );
                     } catch (Exception e) {
@@ -71,9 +71,9 @@ public class RutaAdminDAO {
                             recId,
                             rs.getLong("ramal_id"),
                             rs.getString("rec_codigo"),
-                            rs.getObject("rec_id_ctp", Long.class),
+                            rs.getObject("rec_id_ctp", Integer.class),
                             rs.getString("direccion"),
-                            rs.getObject("longitud_m", Double.class),
+                            rs.getObject("longitud_m", Integer.class),
                             rs.getString("estado_ctp"),
                             activo
                     ));
@@ -96,7 +96,7 @@ public class RutaAdminDAO {
                 d.id_ctp AS rec_id_ctp, d.direccion, d.longitud_m, d.estado_ctp, d.activo
                 FROM rutas r
                 LEFT JOIN recorridos d ON SPLIT_PART(d.codigo_ctp, '-', 1) = r.codigo_ctp
-                WHERE r.codigo_ctp = ?
+                WHERE r.codigo_ctp = CAST(? AS varchar)
                 ORDER BY d.codigo_ctp
                 """;
         return jdbc.query(sql, rs ->{
@@ -104,7 +104,7 @@ public class RutaAdminDAO {
             RutaAdminBuilder builder = new RutaAdminBuilder(
                     rs.getLong("ruta_id"),
                     rs.getString("ruta_codigo"),
-                    rs.getObject("ruta_id_ctp", Long.class),
+                    rs.getObject("ruta_id_ctp", Integer.class),
                     rs.getString("ruta_nombre")
             );
             do {
@@ -118,9 +118,9 @@ public class RutaAdminDAO {
                             recId,
                             rs.getLong("ramal_id"),
                             rs.getString("rec_codigo"),
-                            rs.getObject("rec_id_ctp", Long.class),
+                            rs.getObject("rec_id_ctp", Integer.class),
                             rs.getString("direccion"),
-                            rs.getObject("longitud_m", Double.class),
+                            rs.getObject("longitud_m", Integer.class),
                             rs.getString("estado_ctp"),
                             activo
                     ));
@@ -148,12 +148,12 @@ public class RutaAdminDAO {
     private static class RutaAdminBuilder{
         final long id;
         final String codigo_ctp;
-        final Long id_ctp;
+        final Integer id_ctp;
         final String nombre;
         boolean activo = false;
         final List<RecorridoAdminDTO> recorridos = new ArrayList<>();
 
-        RutaAdminBuilder(Long id, String codigo_ctp, Long id_ctp, String nombre){
+        RutaAdminBuilder(Long id, String codigo_ctp, Integer id_ctp, String nombre){
             this.id = id;
             this.codigo_ctp = codigo_ctp;
             this.id_ctp = id_ctp;

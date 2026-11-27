@@ -5,7 +5,7 @@ import java.util.List;
 public record RutaAdminDTO (
         long id,
         String codigo_ctp,
-        Long id_ctp,
+        Integer id_ctp,
         String nombre,
         boolean activo,
         List<RecorridoAdminDTO> recorridos

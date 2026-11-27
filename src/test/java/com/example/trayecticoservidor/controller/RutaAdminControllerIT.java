@@ -41,7 +41,7 @@ class RutaAdminControllerIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[?(@.codigo_ctp == '9901')].recorridos[*].codigo_ctp",
                         containsInAnyOrder("9901-A-1", "9901-A-2")))
                 .andExpect(jsonPath("$[?(@.codigo_ctp == '9901')].recorridos[0].estado_ctp", contains("false")))
-                .andExpect(jsonPath("$[?(@.codigo_ctp == '9901')].recorridos[0].longitud_m", contains(11400.0)));
+                .andExpect(jsonPath("$[?(@.codigo_ctp == '9901')].recorridos[0].longitud_m", contains(11400)));
     }
 
     @Test
