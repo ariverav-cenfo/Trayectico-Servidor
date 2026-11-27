@@ -31,15 +31,21 @@ public class RutaLecturaDAO {
      * de las rutas de manera rápida y ligera, sin cargar ramales ni desplazamientos.
      *
      * @return Lista de RutaResumenDTO ordenada alfabéticamente por el código del CTP.
+     *
+     * Actualizado para mostrar rutas que tenga recorridos activos(rutas activas)
      */
     public List<RutaResumenDTO> obtenerRutas() {
         String sql = """
-            SELECT r.codigo_ctp, 
+            SELECT r.codigo_ctp,
                    COALESCE(r.nombre, (
-                       SELECT b.descripcion 
-                       FROM ramales b 
-                       WHERE b.ruta_id = r.id 
-                       ORDER BY b.codigo_ctp 
+                       SELECT b.descripcion
+                       FROM ramales b
+                       WHERE EXISTS(
+                           SELECT 1 FROM recorridos d
+                                    WHERE SPLIT_PART(d.codigo_ctp, '-', 1) = r.codigo_ctp
+                                    AND d.activo = true
+                       )
+                       ORDER BY b.codigo_ctp
                        LIMIT 1
                    )) AS name
             FROM rutas r
