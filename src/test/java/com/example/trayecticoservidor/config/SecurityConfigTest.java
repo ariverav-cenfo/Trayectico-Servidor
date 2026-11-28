@@ -122,7 +122,7 @@ class SecurityConfigTest extends AbstractIntegrationTest {
         // Todavía no hay controladores de admin: 404 significa que la seguridad lo dejó pasar
         mockMvc.perform(get("/api/admin/rutas")
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
     }
 
     /**
